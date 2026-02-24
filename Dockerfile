@@ -12,5 +12,5 @@ COPY . .
 # collect static files (using default settings, no env vars needed)
 RUN python manage.py collectstatic --noinput
 
-# run migrations and start server
-CMD python manage.py migrate && daphne -b 0.0.0.0 -p ${PORT:-8000} elearning_platform.asgi:application
+# run migrations, seed demo data, and start server
+CMD python manage.py migrate && python manage.py seed_data && daphne -b 0.0.0.0 -p ${PORT:-8000} elearning_platform.asgi:application
