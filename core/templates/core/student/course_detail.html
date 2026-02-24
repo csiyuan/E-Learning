@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ course.title }} - Course Overview{% endblock %}
+
+{% block content %}
+<!-- Student Course Detail Page - EDUSTREAM Style -->
+<div class="h-full bg-edustream-navy overflow-hidden">
+    <div class="flex flex-col lg:flex-row w-full h-full">
+
+        <!-- Sidebar Partial -->
+        {% include 'core/includes/sidebar.html' with active_page='courses' %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
+            
+            <div class="max-w-6xl mx-auto w-full">
+
+                <!-- Back button -->
+                <a href="{% url 'course_browse' %}"
+                    class="inline-flex items-center space-x-2 text-text-secondary hover:text-edustream-emerald transition mb-6">
+                    <span class="material-symbols-outlined text-sm">arrow_back</span>
+                    <span class="text-sm">Back to Courses</span>
+                </a>
+
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Column - Course Info -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Course Header Card -->
+                <div class="bento-card">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h1 class="text-3xl font-bold mb-3">{{ course.course_code }}: {{ course.title }}</h1>
+                            <p class="text-text-secondary text-sm leading-relaxed">{{ course.description }}</p>
+                        </div>
+
+                        <!-- Average Rating -->
+                        {% if avg_rating > 0 %}
+                        <div class="text-right ml-4">
+                            <div class="flex items-center space-x-1 justify-end mb-1">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= avg_rating %} <span
+                                    class="material-symbols-outlined text-edustream-emerald text-lg"
+                                    style="font-variation-settings: 'FILL' 1;">star</span>
+                                    {% else %}
+                                    <span class="material-symbols-outlined text-text-muted text-lg">star</span>
+                                    {% endif %}
+                                    {% endfor %}
+                            </div>
+                            <p class="text-xs text-text-muted">{{ avg_rating|floatformat:1 }}/5 &bull; {{ feedback_count }} reviews</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-center space-x-4 text-sm text-text-secondary">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-symbols-outlined text-edustream-emerald">person</span>
+                            <span>{{ course.instructor.user.get_full_name|default:course.instructor.user.username }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="material-symbols-outlined text-edustream-emerald">group</span>
+                            <span>{{ course.student_count }} students</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Materials Section -->
+                <div class="bento-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-symbols-outlined text-edustream-emerald">folder_open</span>
+                            <h2 class="text-xl font-bold">Course Materials</h2>
+                        </div>
+                        <span class="text-xs text text-secondary uppercase tracking-wider">DOWNLOAD ALL</span>
+                    </div>
+
+                    {% if materials %}
+                    <div class="space-y-3">
+                        {% for material in materials %}
+                        <div
+                            class="bg-edustream-navy rounded-lg p-4 border border-edustream-border hover:border-edustream-emerald/50 transition group">
+                            <div class="flex items-start space-x-4">
+                                <!-- File icon (based on type) -->
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-edustream-emerald/10 flex items-center justify-center flex-shrink-0">
+                                    {% if material.file_type == 'pdf' %}
+                                    <span class="material-symbols-outlined text-red-400">picture_as_pdf</span>
+                                    {% elif material.file_type in 'mp4,mov,avi' %}
+                                    <span class="material-symbols-outlined text-blue-400">videocam</span>
+                                    {% elif material.file_type in 'jpg,jpeg,png,gif' %}
+                                    <span class="material-symbols-outlined text-green-400">image</span>
+                                    {% else %}
+                                    <span class="material-symbols-outlined text-edustream-emerald">description</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Material info -->
+                                <div class="flex-1 min-w-0">
+                                    <h3
+                                        class="font-semibold mb-1 text-white group-hover:text-edustream-emerald transition">
+                                        {{ material.title }}</h3>
+                                    {% if material.description %}
+                                    <p class="text-sm text-text-secondary mb-2">{{ material.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <div class="flex items-center space-x-3 text-xs text-text-muted">
+                                        <span>{{ material.file_type|upper }} DOCUMENT</span>
+                                        <span>&bull;</span>
+                                        <span>{{ material.uploaded_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Download button -->
+                                <a href="{{ material.file.url }}" download
+                                    class="bg-edustream-emerald hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg flex items-center space-x-2 transition font-semibold">
+                                    <span class="material-symbols-outlined text-sm">download</span>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div
+                        class="text-center py-12 bg-edustream-navy/50 rounded-lg border border-dashed border-edustream-border">
+                        <span class="material-symbols-outlined text-4xl text-text-muted mb-3 block">folder_open</span>
+                        <p class="text-text-secondary">No materials available yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Upcoming Deadlines Section -->
+                <div class="bento-card">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="material-symbols-outlined text-edustream-emerald">timer</span>
+                        <h2 class="text-xl font-bold">Upcoming Deadlines</h2>
+                    </div>
+
+                    {% if upcoming_deadlines %}
+                    <div class="space-y-3">
+                        {% for deadline in upcoming_deadlines %}
+                        <div class="bg-edustream-navy rounded-lg p-4 border border-edustream-border hover:border-edustream-emerald/50 transition group">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold mb-1 text-white group-hover:text-edustream-emerald transition">{{ deadline.title }}</h3>
+                                    <p class="text-xs text-text-secondary mb-3">{{ deadline.description|default:"No description provided." }}</p>
+                                    
+                                    <div class="flex flex-wrap items-center gap-4">
+                                        <div class="flex items-center space-x-2 text-[10px] uppercase font-black tracking-widest text-text-muted">
+                                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                                            <span class="text-white">{{ deadline.due_date|date:"F d, Y @ H:i" }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2 text-[10px] uppercase font-black tracking-widest text-text-muted">
+                                            <span class="material-symbols-outlined text-sm">schedule</span>
+                                            <span class="{% if deadline.is_overdue %}text-red-400{% else %}text-edustream-emerald{% endif %}">
+                                                {{ deadline.time_remaining }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <a href="{% url 'submit_assignment' deadline.id %}" 
+                                   class="ml-4 bg-edustream-slate hover:bg-edustream-emerald hover:text-edustream-navy border border-edustream-border hover:border-edustream-emerald px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">upload_file</span>
+                                    <span>SUBMIT</span>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-12 bg-edustream-navy/50 rounded-lg border border-dashed border-edustream-border">
+                        <span class="material-symbols-outlined text-4xl text-text-muted mb-3 block">pending_actions</span>
+                        <p class="text-text-secondary">No upcoming deadlines found</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- Right Column - Instructor Profile & Feedback -->
+            <div class="space-y-6">
+
+                <!-- Instructor Profile Card (matching reference image) -->
+                <div class="bento-card text-center">
+                    <div
+                        class="w-20 h-20 rounded-full bg-gradient-to-br from-edustream-emerald to-emerald-600 mx-auto mb-4 flex items-center justify-center">
+                        {% if course.instructor.user.profile_pic %}
+                        <img src="{{ course.instructor.user.profile_pic.url }}"
+                            class="w-full h-full rounded-full object-cover">
+                        {% else %}
+                        <span class="material-symbols-outlined text-white text-3xl">person</span>
+                        {% endif %}
+                    </div>
+
+                    <h3 class="text-lg font-bold mb-1">{{ course.instructor.user.get_full_name|default:course.instructor.user.username }}</h3>
+                    <p class="text-xs text-edustream-emerald font-semibold uppercase tracking-wider mb-4">{{ course.instructor.department|default:"SENIOR DESIGN ARCHITECT" }}</p>
+
+                    {% if course.instructor.user.bio %}
+                    <p class="text-sm text-text-secondary leading-relaxed mb-6">{{ course.instructor.user.bio|truncatewords:20 }}</p>
+                    {% else %}
+                    <p class="text-sm text-text-secondary leading-relaxed mb-6">Expert instructor with extensive
+                        experience in {{ course.title }}.</p>
+                    {% endif %}
+
+                    <div
+                        class="flex items-center justify-center space-x-4 text-xs text-text-secondary border-t border-edustream-border pt-4">
+                        <div class="flex items-center space-x-1">
+                            <span class="material-symbols-outlined text-sm text-edustream-emerald">school</span>
+                            <span>Elite Lecturer</span>
+                        </div>
+                        <span>&bull;</span>
+                        <div class="flex items-center space-x-1">
+                            <span class="material-symbols-outlined text-sm text-edustream-emerald">badge</span>
+                            <span>14 Courses</span>
+                        </div>
+                    </div>
+
+                    <!-- Office Hours Button -->
+                    <button
+                        class="w-full mt-6 bg-edustream-navy border border-edustream-border hover:border-edustream-emerald text-white font-semibold py-3 rounded-lg flex items-center justify-center space-x-2 transition">
+                        <span class="material-symbols-outlined text-sm">calendar_today</span>
+                        <span>View Profile</span>
+                    </button>
+                </div>
+
+                <!-- Feedback Button -->
+                {% if has_feedback %}
+                <a href="{% url 'submit_feedback' course.id %}"
+                    class="bento-card block text-center bg-edu stream-emerald/10 border-edustream-emerald/30 hover:bg-edustream-emerald/20 transition">
+                    <span
+                        class="material-symbols-outlined text-edustream-emerald text-2xl mb-2 block">edit_square</span>
+                    <h4 class="text-sm font-bold mb-1">Update Your Review</h4>
+                    <p class="text-xs text-text-secondary">Share your updated thoughts</p>
+                </a>
+                {% else %}
+                <a href="{% url 'submit_feedback' course.id %}"
+                    class="bento-card block text-center bg-edustream-emerald/10 border-edustream-emerald/30 hover:bg-edustream-emerald/20 transition">
+                    <span class="material-symbols-outlined text-edustream-emerald text-2xl mb-2 block">star</span>
+                    <h4 class="text-sm font-bold mb-1">Rate This Course</h4>
+                    <p class="text-xs text-text-secondary">Help others with your feedback</p>
+                </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+</div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.1); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 10px; }
+</style>
+{% endblock %}

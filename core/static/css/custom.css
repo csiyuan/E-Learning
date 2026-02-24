@@ -1,0 +1,305 @@
+/* CSS for the site */
+/* added some stuff that tailwind couldn't do */
+
+/* Network particle background animation (like in the hero images) */
+.network-bg {
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* the background with the circles */
+.network-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Bento card base styles - this is the foundation of everything */
+.bento-card {
+    background: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    /* subtle shadow to make cards pop */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.bento-card:hover {
+    /* slight lift on hover, feels nice */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Primary button - the emerald green style from EDUSTREAM */
+.btn-primary {
+    background: #10B981;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #059669;
+    /* slightly darker on hover */
+    transform: scale(1.02);
+}
+
+/* Secondary button - outlined style */
+.btn-secondary {
+    background: transparent;
+    color: #10B981;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 2px solid #10B981;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Progress bar - emerald gradient like in the images */
+.progress-bar {
+    height: 8px;
+    background: #334155;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* Avatar styles for student/teacher lists */
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #334155;
+}
+
+.avatar-lg {
+    width: 64px;
+    height: 64px;
+}
+
+/* Sidebar navigation active state */
+.nav-item {
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    color: #94A3B8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.nav-item:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.nav-item.active {
+    background: #10B981;
+    color: #0F172A;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+/* Tooltip for compact sidebar */
+.nav-tooltip {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1E293B;
+    color: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    margin-left: 10px;
+    border: 1px solid #334155;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.nav-item:hover .nav-tooltip {
+    opacity: 1;
+    visibility: visible;
+    margin-left: 16px;
+}
+
+/* star rating stuff */
+.star-rating {
+    display: flex;
+    gap: 4px;
+}
+
+.star {
+    color: #334155;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-size: 24px;
+}
+
+.star.filled {
+    color: #10B981;
+}
+
+.star:hover,
+.star:hover~.star {
+    color: #10B981;
+}
+
+/* Badge/tag styles */
+.badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-emerald {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+}
+
+.badge-blue {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3B82F6;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1E293B;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Glassmorphism effect (might use this somewhere) */
+.glass {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* loading spinner */
+.spinner {
+    border: 3px solid #334155;
+    border-top-color: #10B981;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Fade in animation for page loads */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form input styles to match EDUSTREAM */
+.form-input {
+    background: #0F172A;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #F8FAFC;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-input::placeholder {
+    color: #64748B;
+}
+
+/* Grid utilities for Bento layout */
+.bento-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.bento-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+/* Responsive grid */
+@media (max-width: 1024px) {
+    .bento-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .bento-grid-2,
+    .bento-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}

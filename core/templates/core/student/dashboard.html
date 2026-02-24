@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Workspace - SCHOLARHUB{% endblock %}
+
+
+
+{% block footer_margin %}mt-0{% endblock %}
+
+{% block content %}
+<!-- SCHOLARHUB - Student Dashboard inspired by reference image 4 -->
+<div class="h-screen bg-edustream-navy flex flex-col overflow-hidden">
+
+    <!-- Main container with sidebar -->
+    <div class="flex flex-col lg:flex-row w-full lg:h-screen lg:overflow-hidden flex-1">
+
+        <!-- Left Sidebar Navigation - COMPACT VERSION & Sticky Wrapper -->
+        {% include 'core/includes/sidebar.html' with active_page='dashboard' %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
+
+            <!-- Top section - academic year info -->
+            <div class="mb-6 flex-shrink-0">
+                <p class="text-xs text-text-muted uppercase tracking-wider mb-1">ACADEMIC YEAR</p>
+                <h1 class="text-sm text-text-secondary">2025/2026 &bull; Year 3 &bull; Semester I</h1>
+            </div>
+
+            <!-- Bento Grid Layout (matching SCHOLARHUB from image 4) -->
+            <!-- Bento Grid Layout (matching SCHOLARHUB from image 4) -->
+            <!-- Fixed height layout for desktop to prevent shifts -->
+            {% block dashboard_content %}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 pb-3">
+
+                <!-- Left Column: Learning Path Card -->
+                <div class="lg:col-span-2 flex flex-col min-h-0" 
+                     x-data="{ 
+                        activeCourseId: null, 
+                        distributions: {
+                            'global': {
+                                'data': [
+                                    {% for item in material_distribution %}
+                                    { name: '{{ item.name }}', percentage: {{ item.percentage }}, color: '{{ item.color }}', glow: '{{ item.glow }}', icon: '{{ item.icon }}', count: {{ item.count }} }{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                ],
+                                'title': 'All Courses',
+                                'code': 'Global Hub',
+                                'label': 'Study Overview'
+                            },
+                            {% for course in courses %}
+                            '{{ course.id }}': {
+                                'data': [
+                                    {% for item in course.distribution %}
+                                    { name: '{{ item.name }}', percentage: {{ item.percentage }}, color: '{{ item.color }}', glow: '{{ item.glow }}', icon: '{{ item.icon }}', count: {{ item.count }} }{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                ],
+                                'title': '{{ course.title|escapejs }}',
+                                'code': 'Active Node',
+                                'label': 'Course Specific Mix'
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        },
+                        get currentDist() {
+                            return (this.activeCourseId && this.distributions[this.activeCourseId]) ? this.distributions[this.activeCourseId] : this.distributions['global'];
+                        }
+                     }">
+                    <!-- Learning Path Card -->
+                    <div class="bento-card flex flex-col flex-1 min-h-0">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <div class="relative">
+                                <h2
+                                    class="text-xl font-bold bg-gradient-to-r from-white to-text-secondary bg-clip-text">
+                                    Learning Path</h2>
+                                <p class="text-xs text-text-muted mt-1 uppercase tracking-widest">Primary Course Track: <span
+                                        class="text-edustream-emerald font-black uppercase" x-text="currentDist.title"></span></p>
+                            </div>
+                            <div class="text-right flex flex-col items-end">
+                                <div class="relative group cursor-default">
+                                    <div class="absolute -inset-1 bg-gradient-to-r from-edustream-emerald/20 to-edustream-emerald/0 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                    <div class="relative px-3 py-1 bg-edustream-navy border border-white/5 rounded-lg flex flex-col items-center">
+                                        <div class="text-2xl font-black text-edustream-emerald leading-none animate-pulse-subtle">{% if courses %}{{ courses|length }}{% else %}0{% endif %}</div>
+                                        <div class="text-[9px] text-text-muted font-bold uppercase tracking-tighter">Modules</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+ 
+                        <!-- Progress indicator (Resource Spectrum) -->
+                        <div class="mb-8">
+                            <div class="flex justify-between items-center text-xs mb-3">
+                                <span class="text-white font-black uppercase tracking-[0.2em]" x-text="currentDist.code"></span>
+                                <span class="text-text-muted font-bold text-[10px] uppercase tracking-tighter transition-all duration-500" x-text="currentDist.label"></span>
+                            </div>
+                            
+                            <template x-if="currentDist.data.length > 0">
+                                <div>
+                                    <div class="flex h-3 w-full rounded-full overflow-hidden bg-edustream-navy border border-white/5 relative group shadow-inner">
+                                        <template x-for="item in currentDist.data" :key="item.name">
+                                            <div :class="item.color + ' ' + item.glow" 
+                                                 class="transition-all duration-700 hover:brightness-110 cursor-pointer relative" 
+                                                 :style="'width: ' + item.percentage + '%;'"
+                                                 :title="item.name + ': ' + item.count + ' file' + (item.count !== 1 ? 's' : '')">
+                                                 <!-- Subtle shimmer overlay -->
+                                                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <!-- Legend / Breakdowns -->
+                                    <div class="flex flex-wrap gap-x-5 gap-y-2 mt-4">
+                                        <template x-for="item in currentDist.data" :key="item.name">
+                                            <div class="flex items-center gap-2 group/legend">
+                                                <div class="w-1.5 h-1.5 rounded-full" :class="item.color + ' ' + item.glow"></div>
+                                                <span class="material-symbols-outlined text-[14px] text-text-muted group-hover/legend:text-white transition-colors" x-text="item.icon"></span>
+                                                <span class="text-[10px] text-text-muted font-bold uppercase tracking-widest group-hover/legend:text-white transition-colors" x-text="item.name"></span>
+                                                <span class="text-[10px] text-text-secondary font-black" x-text="Math.round(item.percentage) + '%'"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            
+                            <template x-if="currentDist.data.length === 0">
+                                <div>
+                                    <div class="progress-bar h-2 bg-edustream-navy rounded-full border border-white/5 overflow-hidden">
+                                        <div class="progress-bar-fill w-0 bg-edustream-emerald h-full transition-all duration-1000"></div>
+                                    </div>
+                                    <p class="text-[10px] text-text-muted mt-2 uppercase tracking-widest text-center italic">Awaiting academic materials...</p>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Modules Section - RESTORED TARGETED SCROLLING -->
+                        <div class="mt-auto flex-1 flex flex-col min-h-0">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4
+                                    class="text-[10px] font-bold text-text-muted uppercase tracking-[0.4em] flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 bg-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.5)] animate-pulse"></span>
+                                    Semester Modules
+                                </h4>
+                            </div>
+                            <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-4 min-h-0">
+                                {% for course in courses %}
+                                <!-- Dynamic Course Module -->
+                                 <details class="group" :open="activeCourseId == '{{ course.id }}'" @toggle="if($event.target.open) { activeCourseId = '{{ course.id }}' }">
+                                     <summary
+                                         class="cursor-pointer bg-edustream-navy/60 hover:bg-edustream-slate/40 backdrop-blur-sm rounded-xl p-4 transition-all duration-300 flex items-center justify-between border group-open:bg-edustream-slate/20 shadow-sm hover:shadow-md
+                                         {% if course.highlight_state == 'orange' %}
+                                            border-orange-400/60 shadow-[0_0_15px_rgba(251,146,60,0.1)] hover:shadow-orange-400/10 group-open:border-orange-400/40
+                                         {% else %}
+                                            border-white/5 hover:border-edustream-emerald/60 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] group-open:border-edustream-emerald/40 group-open:bg-edustream-slate/20
+                                         {% endif %}"
+                                         @click.prevent="activeCourseId = (activeCourseId == '{{ course.id }}' ? null : '{{ course.id }}')">
+                                         <div class="flex items-center space-x-3 flex-1">
+                                             <div
+                                                 class="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300
+                                                 {% if course.highlight_state == 'orange' %}
+                                                    bg-orange-400/5 group-open:bg-orange-400 group-open:text-edustream-navy group-hover:bg-orange-400/10 group-open:shadow-[0_0_15px_rgba(251,146,60,0.2)]
+                                                 {% else %}
+                                                    bg-white/5 group-hover:bg-edustream-emerald/10 group-hover:text-edustream-emerald group-open:bg-edustream-emerald group-open:text-edustream-navy group-open:shadow-[0_0_15px_rgba(16,185,129,0.2)]
+                                                 {% endif %}">
+                                                 <span class="material-symbols-outlined text-sm">school</span>
+                                             </div>
+                                             <div>
+                                                 <h5 class="font-bold text-sm flex items-center space-x-2 text-white/90 group-open:text-white">
+                                                     <span>{{ course.title }}</span>
+                                                 </h5>
+                                                 <p class="text-[11px] text-text-muted mt-0.5 group-hover:text-text-secondary transition-colors">{{ course.materials.count }} resource{{ course.materials.count|pluralize }} available</p>
+                                             </div>
+                                         </div>
+                                         <div class="flex items-center">
+                                             <span
+                                                 class="material-symbols-outlined text-text-muted transition-all duration-300
+                                                 {% if course.highlight_state == 'orange' %}group-open:text-orange-400
+                                                 {% else %}group-open:text-edustream-emerald group-hover:text-edustream-emerald{% endif %} group-open:rotate-180">expand_more</span>
+                                         </div>
+                                     </summary>
+                                    <div class="mt-2 ml-4 pl-8 border-l-2 border-edustream-border space-y-4 py-3">
+                                        <!-- Pinned Assignment (If match found) -->
+                                        {% for deadline in upcoming_deadlines %}
+                                            {% if deadline.course.id == course.id and not deadline.is_submitted %}
+                                            <div class="pinned-assignment group/pinned animate-in fade-in zoom-in-95 duration-500 mb-6">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="material-symbols-outlined text-[12px] text-orange-400 animate-pulse">priority_high</span>
+                                                        <p class="text-[9px] font-black text-orange-400 uppercase tracking-[0.3em]">Module Priority</p>
+                                                    </div>
+                                                </div>
+                                                <a href="{% url 'submit_assignment' deadline.id %}" 
+                                                   class="cursor-pointer bg-orange-400/5 hover:bg-orange-400/10 backdrop-blur-sm rounded-xl p-3 transition-all duration-300 flex items-center justify-between border border-orange-400/20">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-9 h-9 rounded-lg bg-orange-400 flex items-center justify-center text-edustream-navy shadow-sm">
+                                                            <span class="material-symbols-outlined text-sm font-black">assignment_late</span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="font-bold text-[13px] text-white group-hover/pinned:text-orange-400 transition-colors">
+                                                                {{ deadline.title }}
+                                                            </h5>
+                                                            <p class="text-[10px] text-orange-400/80 mt-0.5 font-bold uppercase tracking-tight">{{ deadline.time_remaining }} REMAINING</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-[8px] bg-orange-400 text-edustream-navy px-1.5 py-0.5 rounded font-black uppercase">ACTION REQUIRED</span>
+                                                        <span class="material-symbols-outlined text-orange-400 text-xs">arrow_forward</span>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% regroup course.materials.all|dictsort:"title" by title as grouped_materials %}
+                                        {% for group in grouped_materials %}
+                                        <div class="group/collection">
+                                            <!-- Resource Collection Header -->
+                                            <div class="flex items-center justify-between mb-2 px-1 group/header">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="material-symbols-outlined text-[14px] text-edustream-emerald/60 group-hover/header:text-edustream-emerald transition-colors">folder_open</span>
+                                                    <p class="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] group-hover/header:text-white transition-colors">{{ group.grouper }}</p>
+                                                </div>
+                                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-edustream-navy text-text-muted border border-white/5 uppercase tracking-tighter">{{ group.list|length }} file{{ group.list|pluralize }}</span>
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                {% for material in group.list %}
+                                                <div class="flex items-center justify-between p-2 rounded-lg bg-edustream-navy/40 hover:bg-edustream-slate/40 transition-all group/item border border-white/5 hover:border-edustream-emerald/20">
+                                                    <div class="flex items-center space-x-3">
+                                                        <div class="w-8 h-8 rounded-lg bg-edustream-navy flex items-center justify-center text-text-muted group-hover/item:text-edustream-emerald transition-colors shadow-inner">
+                                                            <span class="material-symbols-outlined text-[18px]">
+                                                                {% if material.file_type == 'pdf' %}description
+                                                                {% elif material.file_type == 'mp4' or material.file_type == 'mov' %}movie
+                                                                {% else %}article{% endif %}
+                                                            </span>
+                                                        </div>
+                                                        <div class="min-w-0">
+                                                            <p class="text-[11px] font-bold text-white truncate max-w-[140px] md:max-w-[280px]">{{ material.filename }}</p>
+                                                            <p class="text-[10px] text-text-muted uppercase tracking-tighter opacity-70">
+                                                                {% if material.safe_size %}{{ material.safe_size|filesizeformat }}{% else %}Unknown Size{% endif %} &bull; {{ material.uploaded_at|date:"M d" }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <a href="{{ material.file.url }}" target="_blank" rel="noopener noreferrer" 
+                                                       class="w-7 h-7 rounded-full border border-edustream-border/50 flex items-center justify-center text-text-muted hover:bg-edustream-emerald hover:text-edustream-navy hover:border-edustream-emerald transition-all shadow-sm transform hover:scale-105"
+                                                       title="Download {{ material.filename }}">
+                                                        <span class="material-symbols-outlined text-[14px]">download</span>
+                                                    </a>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="py-2 px-2 italic text-[11px] text-text-muted flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-xs">info</span>
+                                            No materials uploaded for this course yet.
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                                {% empty %}
+                                <div class="text-center py-10 opacity-50">
+                                    <span class="material-symbols-outlined text-4xl mb-2">auto_stories</span>
+                                    <p class="text-sm">Not enrolled in any modules yet.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of LEFT COLUMN -->
+
+                <!-- RIGHT COLUMN (Sidebar Cards) -->
+                <div class="lg:col-span-1 flex flex-col min-h-0 space-y-5 h-full">
+
+                    <!-- Upcoming Deadlines Card -->
+                    <div class="bento-card flex-shrink-0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-orange-400">event_upcoming</span>
+                                Upcoming Deadlines
+                            </h3>
+                        </div>
+                        <div class="space-y-3 min-h-[170px] max-h-[170px] overflow-y-auto custom-scrollbar pr-1">
+                            {% for deadline in upcoming_deadlines %}
+                            <a href="{% url 'submit_assignment' deadline.id %}" class="p-3 bg-white/5 border border-white/5 rounded-xl hover:border-orange-400/30 transition-all group block">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">{{ deadline.title }}</h4>
+                                    <span class="text-[9px] font-black text-orange-400 uppercase tracking-tighter">{{ deadline.time_remaining }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] text-text-muted font-bold uppercase">{{ deadline.course.title|truncatechars:20 }}</span>
+                                        <span class="text-[8px] text-text-muted opacity-60">{{ deadline.due_date|date:"M d, H:i" }}</span>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full bg-orange-400/10 flex items-center justify-center group-hover:bg-orange-400/20 transition-colors">
+                                        <span class="material-symbols-outlined text-xs text-orange-400">upload</span>
+                                    </div>
+                                </div>
+                            </a>
+                             {% empty %}
+                             <div class="py-6 text-center italic text-xs text-text-muted opacity-50">
+                                 No upcoming deadlines
+                             </div>
+                             {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Activity Feed Card -->
+                    <div class="bento-card flex flex-col flex-1 min-h-0 overflow-hidden">
+                        <div class="flex items-center justify-between mb-3 flex-shrink-0">
+                            <h3 class="text-base font-bold">Activity Feed</h3>
+                        </div>
+
+                        <div class="h-[310px] overflow-hidden flex flex-col">
+                            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                                {% include 'core/includes/activity_feed.html' with updates=status_updates %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+            {% endblock %}
+        </main>
+
+    </div>
+
+</div>
+{% endblock %}

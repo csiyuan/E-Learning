@@ -1,0 +1,226 @@
+<div id="chat-widget-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+
+    <!-- Chat Window (Hidden by default) -->
+    <div id="chat-widget-window"
+        class="absolute bottom-[70px] right-0 bg-edustream-navy border border-edustream-border rounded-xl shadow-2xl w-80 h-96 flex flex-col transition-all transform origin-bottom-right scale-0 opacity-0 overflow-hidden pointer-events-none">
+
+        <!-- Header -->
+        <div class="bg-edustream-slate p-3 border-b border-edustream-border flex justify-between items-center cursor-pointer"
+            onclick="toggleChatWidget()">
+            <div class="flex items-center gap-2">
+                <div id="widget-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                <h3 id="widget-header-title" class="font-bold text-white text-sm">Select a Course</h3>
+            </div>
+            <button class="text-text-secondary hover:text-white">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- Course Tabs -->
+        <div class="bg-edustream-navy border-b border-edustream-border px-2 py-1.5 flex overflow-x-auto custom-scrollbar gap-1 flex-shrink-0"
+            style="scrollbar-width: thin; -ms-overflow-style: none;">
+
+            <style>
+                #chat-widget-container .custom-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+            </style>
+            {% if request.user.user_type == 'student' and request.user.student_profile %}
+            {% for course in request.user.student_profile.get_my_courses %}
+            <button
+                onclick="switchWidgetRoom('{{ course.id }}', '{{ course.title|escapejs }}')"
+                id="tab-{{ course.id }}"
+                class="px-2 py-1 bg-transparent hover:bg-edustream-slate border border-transparent text-text-muted hover:text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors">
+                HUB: {{ course.course_code|default:course.id }}
+            </button>
+            {% endfor %}
+            {% elif request.user.user_type == 'teacher' and request.user.teacher_profile %}
+            {% for course in request.user.teacher_profile.get_my_courses %}
+            <button
+                onclick="switchWidgetRoom('{{ course.id }}', '{{ course.title|escapejs }}')"
+                id="tab-{{ course.id }}"
+                class="px-2 py-1 bg-transparent hover:bg-edustream-slate border border-transparent text-text-muted hover:text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors">
+                HUB: {{ course.course_code|default:course.id }}
+            </button>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Messages -->
+        <div id="widget-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-[#0B1120] custom-scrollbar">
+            <!-- Messages injected via JS -->
+            <div class="text-center py-4">
+                <p class="text-[10px] text-text-muted">Please select a course to start chatting</p>
+            </div>
+        </div>
+
+        <!-- Input (Hidden by default until a course is chosen) -->
+        <form id="widget-form" class="p-3 bg-edustream-slate border-t border-edustream-border flex gap-2 hidden">
+            <input type="text" id="widget-input" placeholder="Message..." autocomplete="off"
+                class="flex-1 bg-edustream-navy text-white text-xs rounded-lg px-3 py-2 border border-edustream-border focus:border-edustream-emerald focus:outline-none">
+            <button type="submit"
+                class="bg-edustream-emerald text-edustream-navy rounded-lg p-2 hover:bg-emerald-400 transition-colors">
+                <span class="material-symbols-outlined text-sm">send</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Toggle Button -->
+    <button onclick="toggleChatWidget()" id="chat-widget-btn"
+        class="w-14 h-14 bg-edustream-emerald rounded-full shadow-lg shadow-emerald-500/20 flex items-center justify-center text-edustream-navy hover:scale-105 transition-transform group">
+        <span class="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform">chat</span>
+
+        <!-- Unread Badge (Hidden by default) -->
+        <span id="widget-badge"
+            class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center border-2 border-edustream-navy hidden">0</span>
+    </button>
+
+</div>
+
+<script>
+    const widgetWindow = document.getElementById('chat-widget-window');
+    const widgetBtn = document.getElementById('chat-widget-btn');
+    const widgetMessages = document.getElementById('widget-messages');
+    const widgetBadge = document.getElementById('widget-badge');
+    let isWidgetOpen = false;
+    let unreadCount = 0;
+
+    function toggleChatWidget() {
+        isWidgetOpen = !isWidgetOpen;
+        if (isWidgetOpen) {
+            widgetWindow.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+            widgetWindow.classList.add('pointer-events-auto');
+            widgetBtn.classList.add('rotate-90');
+            // Reset badge
+            unreadCount = 0;
+            widgetBadge.classList.add('hidden');
+            widgetBadge.innerText = '0';
+            scrollToBottom();
+        } else {
+            widgetWindow.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+            widgetWindow.classList.remove('pointer-events-auto');
+            widgetBtn.classList.remove('rotate-90');
+        }
+    }
+
+    function scrollToBottom() {
+        widgetMessages.scrollTop = widgetMessages.scrollHeight;
+    }
+
+    // WebSocket Connection
+    let currentRoom = null;
+    let widgetSocket = null;
+
+    function connectToWidgetRoom(roomName) {
+        if (!roomName) return;
+
+        if (widgetSocket) {
+            widgetSocket.close();
+        }
+
+        widgetSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+        );
+
+        widgetSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            const currentUser = "{{ request.user.username }}";
+            const isMe = data.username === currentUser;
+
+            const msgHTML = `
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                    <div class="px-3 py-2 rounded-lg text-xs max-w-[85%] 
+                        ${isMe ? 'bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20 rounded-tr-none' : 'bg-edustream-slate text-text-secondary border border-edustream-border rounded-tl-none'}">
+                        ${!isMe ? `<span class="font-bold text-[10px] block mb-0.5 opacity-70">${data.full_name || data.username}</span>` : ''}
+                        ${data.message}
+                    </div>
+                </div>
+            `;
+
+            widgetMessages.insertAdjacentHTML('beforeend', msgHTML);
+            scrollToBottom();
+
+            // Update badge if closed and not me
+            if (!isWidgetOpen && !isMe) {
+                unreadCount++;
+                widgetBadge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                widgetBadge.classList.remove('hidden');
+            }
+        };
+    }
+
+    // Connect initially
+    connectToWidgetRoom(currentRoom);
+
+    function switchWidgetRoom(roomName, displayName) {
+        if (currentRoom === roomName) return;
+
+        // Update tabs UI
+        document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+            btn.classList.remove('bg-edustream-slate', 'border-edustream-emerald/30', 'text-edustream-emerald');
+            btn.classList.add('bg-transparent', 'border-transparent', 'text-text-muted');
+        });
+
+        const activeTab = document.getElementById('tab-' + roomName);
+        if (activeTab) {
+            activeTab.classList.remove('bg-transparent', 'border-transparent', 'text-text-muted');
+            activeTab.classList.add('bg-edustream-slate', 'border-edustream-emerald/30', 'text-edustream-emerald');
+        }
+
+        // Update header & status dot
+        document.getElementById('widget-header-title').innerText = displayName;
+        const statusDot = document.getElementById('widget-status-dot');
+        if (statusDot) {
+            statusDot.classList.remove('bg-slate-500');
+            statusDot.classList.add('bg-edustream-emerald', 'animate-pulse');
+        }
+
+        // Clear messages and show form
+        widgetMessages.innerHTML = `<div class="text-center py-4">
+            <p class="text-[10px] text-text-muted">Connected to ${displayName}</p>
+        </div>`;
+        
+        fetch(`/api/chat/${roomName}/history/`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.messages) {
+                    data.messages.forEach(msg => {
+                        const isMe = msg.username === "{{ request.user.username }}";
+                        const msgHTML = `
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                                <div class="px-3 py-2 rounded-lg text-xs max-w-[85%] 
+                                    ${isMe ? 'bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20 rounded-tr-none' : 'bg-edustream-slate text-text-secondary border border-edustream-border rounded-tl-none'}">
+                                    ${!isMe ? `<span class="font-bold text-[10px] block mb-0.5 opacity-70">${msg.full_name || msg.username}</span>` : ''}
+                                    ${msg.message}
+                                </div>
+                            </div>
+                        `;
+                        widgetMessages.insertAdjacentHTML('beforeend', msgHTML);
+                    });
+                    scrollToBottom();
+                }
+            })
+            .catch(err => console.error("Could not fetch history", err));
+            
+        const widgetForm = document.getElementById('widget-form');
+        if (widgetForm) widgetForm.classList.remove('hidden');
+
+        currentRoom = roomName;
+        connectToWidgetRoom(roomName);
+    }
+
+    document.getElementById('widget-form').onsubmit = function (e) {
+        e.preventDefault();
+        const input = document.getElementById('widget-input');
+        const message = input.value.trim();
+        const username = "{{ request.user.username }}";
+
+        if (message && widgetSocket) {
+            widgetSocket.send(JSON.stringify({
+                'message': message,
+                'username': username
+            }));
+            input.value = '';
+        }
+    };
+</script>

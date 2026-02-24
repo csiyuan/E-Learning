@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ viewed_user.get_full_name|default:viewed_user.username }} - Profile{% endblock %}
+
+{% block content %}
+<div class="h-full bg-edustream-navy overflow-y-auto custom-scrollbar">
+    <div class="max-w-6xl mx-auto p-6 md:p-10">
+        
+        <!-- Profile Header -->
+        <div class="bento-card mb-8 p-8 relative overflow-hidden group">
+            <div class="absolute -inset-1 bg-gradient-to-r from-edustream-emerald/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition duration-500 blur-xl"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                <!-- Avatar -->
+                <div class="relative">
+                    <div class="w-32 h-32 rounded-full border-4 border-edustream-emerald/30 overflow-hidden shadow-2xl">
+                        {% if viewed_user.profile_pic %}
+                            <img src="{{ viewed_user.profile_pic.url }}" class="w-full h-full object-cover" alt="{{ viewed_user.username }}">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ viewed_user.get_full_name|default:viewed_user.username }}&background=10B981&color=fff&size=128" class="w-full h-full object-cover">
+                        {% endif %}
+                    </div>
+                    <div class="absolute bottom-1 right-1 w-6 h-6 bg-edustream-emerald rounded-full border-2 border-edustream-slate"></div>
+                </div>
+
+                <!-- Info -->
+                <div class="text-center md:text-left flex-1">
+                    <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                        <h1 class="text-3xl font-black text-white tracking-tight">{{ viewed_user.get_full_name|default:viewed_user.username }}</h1>
+                        <span class="px-3 py-1 rounded-full bg-edustream-emerald/10 border border-edustream-emerald/20 text-edustream-emerald text-xs font-bold uppercase tracking-widest">
+                            {{ viewed_user.user_type }}
+                        </span>
+                    </div>
+                    <p class="text-text-secondary text-lg mb-4 max-w-2xl">{{ viewed_user.bio|default:"No bio provided yet." }}</p>
+                    
+                    <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                        <div class="flex items-center gap-2 text-text-muted">
+                            <span class="material-symbols-outlined text-sm">alternate_email</span>
+                            <span class="text-sm font-medium">{{ viewed_user.email }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-text-muted">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            <span class="text-sm font-medium">Joined {{ viewed_user.date_joined|date:"M Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Status Updates -->
+            <div class="lg:col-span-2 space-y-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2 px-1">
+                    <span class="material-symbols-outlined text-edustream-emerald">dynamic_feed</span>
+                    Recent Activity
+                </h2>
+                
+                <div class="space-y-4">
+                    {% for update in status_updates %}
+                    <div class="bento-card p-6 border-l-4 border-l-edustream-emerald/50">
+                        <p class="text-white text-base leading-relaxed mb-4">{{ update.content }}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-text-muted flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-xs">schedule</span>
+                                {{ update.created_at|timesince }} ago
+                            </span>
+                            {% if update.course %}
+                            <span class="text-[10px] font-bold text-edustream-emerald bg-edustream-emerald/5 px-2 py-0.5 rounded border border-edustream-emerald/10">
+                                {{ update.course.title|truncatechars:15 }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="bento-card p-10 text-center border-dashed border-2">
+                        <span class="material-symbols-outlined text-4xl text-text-muted/30 mb-2">post_add</span>
+                        <p class="text-text-muted">No recent status updates from this user.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Column: Courses & Deadlines -->
+            <div class="space-y-8">
+                <!-- Courses Section -->
+                <section>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4 px-1">
+                        <span class="material-symbols-outlined text-edustream-emerald">school</span>
+                        Courses
+                    </h2>
+                    <div class="space-y-3">
+                        {% for course in courses %}
+                        <a href="{% if user.user_type == 'teacher' %}{% url 'course_detail' course.id %}{% else %}{% url 'course_detail_student' course.id %}{% endif %}" 
+                           class="flex items-center justify-between p-4 bg-edustream-slate/50 hover:bg-edustream-slate border border-edustream-border rounded-xl transition-all group">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-bold text-edustream-emerald uppercase">Academic Hub</span>
+                                <span class="text-sm font-bold text-white group-hover:text-edustream-emerald transition-colors">{{ course.title }}</span>
+                            </div>
+                            <span class="material-symbols-outlined text-text-muted group-hover:translate-x-1 transition-transform">chevron_right</span>
+                        </a>
+                        {% empty %}
+                        <p class="text-text-muted text-sm italic px-1">Not involved in any courses yet.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Deadlines Section -->
+                <section>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4 px-1">
+                        <span class="material-symbols-outlined text-orange-400">event_upcoming</span>
+                        Upcoming
+                    </h2>
+                    <div class="space-y-3">
+                        {% for deadline in upcoming_deadlines %}
+                        <div class="p-4 bg-orange-400/5 border border-orange-400/10 rounded-xl relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-orange-400/50"></div>
+                            <h4 class="text-sm font-bold text-white mb-1">{{ deadline.title }}</h4>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-medium text-orange-400 uppercase tracking-wider">{{ deadline.course.title|truncatechars:15 }}</span>
+                                <span class="text-[10px] font-bold text-white/50">{{ deadline.due_date|date:"D, M d" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-text-muted text-sm italic px-1">No upcoming deadlines.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

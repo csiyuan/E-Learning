@@ -1,0 +1,402 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{% block title %}EDUSTREAM{% endblock %}</title>
+
+    <!-- TailwindCSS CDN - so much easier than setting up the build process lol -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Google Fonts - using Inter because it looks clean -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Flatpickr (Premium Date/Time Pickers) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Tailwind config - EDUSTREAM colors! finally got them right after like 3 tries -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // the exact colors from the EDUSTREAM images
+                        "edustream-navy": "#0F172A",  // main background
+                        "edustream-slate": "#1E293B",  // cards
+                        "edustream-emerald": "#10B981",  // THE PRIMARY COLOR
+                        "edustream-border": "#334155",  // borders
+                        "text-primary": "#F8FAFC",
+                        "text-secondary": "#94A3B8",
+                        "text-muted": "#64748B",
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "bento": "16px",
+                        "bento-lg": "20px",
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Load custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+    <!-- Some inline styles I couldn't figure out how to do in Tailwind -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            margin: 0;
+        }
+
+        /* network background animation (like in the hero images) */
+        .network-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* icons styling */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+
+    {% load static %}
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="text-text-primary h-screen overflow-hidden flex flex-col">
+
+    <!-- Top Navigation Bar - EDUSTREAM style -->
+    {% if user.is_authenticated %}
+    <nav class="bg-edustream-slate border-b border-edustream-border sticky top-0 z-50 h-16 flex-shrink-0">
+        <div class="max-w-full mx-auto px-6 h-full">
+            <div class="flex items-center justify-between h-full gap-6">
+                <!-- Logo and brand -->
+                <a href="{% url 'home' %}" class="flex items-center space-x-2 flex-shrink-0">
+                    <div class="w-10 h-10 bg-edustream-emerald rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-2xl">school</span>
+                    </div>
+                    <span class="text-xl font-bold">EDUSTREAM</span>
+                </a>
+
+                <!-- Mobile hamburger menu button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-text-secondary">menu</span>
+                </button>
+
+                <!-- Hidden md:flex navigation placeholder -->
+                <div class="hidden md:flex items-center space-x-6 flex-1">
+                </div>
+
+                <!-- Right side -->
+                <div class="hidden lg:flex items-center space-x-4">
+                    {% if user.user_type == 'teacher' %}
+                    <div class="relative" x-data="{ 
+                        txt: '', 
+                        resList: [], 
+                        openDropdown: false,
+                        isSearching: false,
+                        search() {
+                            if (this.txt.length < 2) {
+                                this.resList = [];
+                                this.openDropdown = false;
+                                return;
+                            }
+                            this.isSearching = true;
+                            // calling the search api
+                            fetch(`/api/search/users/?q=${encodeURIComponent(this.txt)}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    this.resList = data.results;
+                                    this.openDropdown = this.resList.length > 0;
+                                    this.isSearching = false;
+                                });
+                        }
+                    }" @click.away="openDropdown = false">
+                        <form action="{% url 'search_users' %}" method="get" class="relative">
+                            <input type="text" name="q" x-model="txt" @input.debounce.300ms="search()" 
+                                @focus="if(resList.length > 0) openDropdown = true"
+                                placeholder="Search students & colleagues..."
+                                class="w-72 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-5 py-2 pl-11 text-xs focus:outline-none focus:border-edustream-emerald/60 focus:bg-white/10 focus:shadow-[0_0_15px_rgba(16,185,129,0.1)] transition-all duration-300 text-white placeholder-text-muted">
+                            <button type="submit"
+                                class="absolute left-4 inset-y-0 flex items-center text-text-muted hover:text-edustream-emerald transition-colors">
+                                <span class="material-symbols-outlined text-base">search</span>
+                            </button>
+                        </form>
+
+                        <!-- Autocomplete Dropdown -->
+                        <div x-show="openDropdown" x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            class="absolute top-full left-0 right-0 mt-2 bg-edustream-slate/95 backdrop-blur-md border border-edustream-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] z-[60] overflow-hidden">
+                            <div class="py-2">
+                                <template x-for="item in resList" :key="item.username">
+                                    <a :href="`/profile/${item.username}/`" 
+                                        class="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all group">
+                                        <div class="relative flex-shrink-0">
+                                            <img :src="item.pfp_url" class="w-8 h-8 rounded-xl object-cover border border-white/5 group-hover:border-edustream-emerald/40 transition-colors">
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-[11px] font-bold text-white truncate" x-text="item.full_name"></p>
+                                            <p class="text-[8px] text-text-muted uppercase tracking-widest font-black flex items-center gap-1.5 opacity-60">
+                                                <span class="w-1 h-1 rounded-full" :class="item.user_type === 'Lecturer' ? 'bg-blue-400' : 'bg-edustream-emerald'"></span>
+                                                <span x-text="item.user_type"></span>
+                                            </p>
+                                        </div>
+                                        <span class="material-symbols-outlined text-xs text-text-muted group-hover:text-edustream-emerald transition-colors">north_west</span>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="relative" id="notification-container">
+                        <button onclick="toggleNotifications()"
+                            class="p-2 hover:bg-edustream-navy rounded-lg transition relative focus:outline-none">
+                            <span class="material-symbols-outlined text-text-secondary">notifications</span>
+                            {% if user.notifications.exists %}
+                            <span
+                                class="absolute top-2 right-2 w-2 h-2 bg-edustream-emerald rounded-full border border-edustream-slate"></span>
+                            {% endif %}
+                        </button>
+
+                        <div id="notification-dropdown"
+                            class="hidden absolute top-full -right-[110px] mt-2 w-64 bg-edustream-slate border border-edustream-border rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in origin-top-right">
+                            <div
+                                class="px-3 py-2 border-b border-edustream-border/50 bg-edustream-navy/50 backdrop-blur-sm">
+                                <h3 class="text-[10px] uppercase font-bold text-text-muted tracking-wider">Notifications
+                                </h3>
+                            </div>
+                            <div class="max-h-[120px] overflow-y-auto custom-scrollbar bg-edustream-slate/90">
+                                {% for notification in user.notifications.all|slice:":10" %}
+                                <div
+                                    class="px-3 py-2.5 border-b border-edustream-border/30 hover:bg-edustream-navy/50 transition-colors group">
+                                    <div class="flex items-start gap-2">
+                                        <div class="mt-0.5 w-1.5 h-1.5 rounded-full bg-edustream-emerald flex-shrink-0">
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-[11px] text-white leading-tight font-medium group-hover:text-edustream-emerald transition-colors">
+                                                {{ notification.message }}</p>
+                                            <p class="text-[9px] text-text-muted mt-0.5">{{ notification.created_at|timesince }} ago</p>
+                                            <!-- Timestamp placeholder, ideally use created_at -->
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="px-4 py-6 text-center">
+                                    <span
+                                        class="material-symbols-outlined text-xl text-text-muted/30 mb-1">notifications_off</span>
+                                    <p class="text-[10px] text-text-muted">No new notifications</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <button class="flex items-center space-x-2 hover:bg-edustream-navy rounded-lg p-2 transition">
+                            <div class="hidden md:block text-right mr-2 leading-tight">
+                                <div class="text-sm font-bold text-white">{{ user.get_full_name|default:user.username }}
+                                </div>
+                                {% if user.user_type == 'teacher' %}
+                                <div class="text-[10px] text-edustream-emerald font-bold tracking-wider uppercase">
+                                    LECTURER</div>
+                                {% endif %}
+                            </div>
+                            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=10B981&color=fff"
+                                alt="Profile" class="w-9 h-9 rounded-full border border-edustream-border">
+                        </button>
+                    </div>
+
+                    <a href="{% url 'logout' %}"
+                        class="text-text-secondary hover:text-edustream-emerald transition p-2">
+                        <span class="material-symbols-outlined">logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="fixed inset-y-0 left-0 w-80 bg-edustream-slate shadow-xl transform transition-transform duration-300 -translate-x-full"
+            id="mobile-menu-drawer">
+            <div class="flex items-center justify-between p-6 border-b border-edustream-border">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 bg-edustream-emerald rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-2xl">school</span>
+                    </div>
+                    <span class="text-xl font-bold">EDUSTREAM</span>
+                </div>
+                <button id="mobile-menu-close" class="p-2 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-text-secondary">close</span>
+                </button>
+            </div>
+
+            <nav class="p-6 space-y-4">
+                {% if user.user_type == 'student' %}
+                <a href="{% url 'student_dashboard' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'course_browse' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">school</span>
+                    <span>Explore Courses</span>
+                </a>
+                <a href="{% url 'chat_room' 'general' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">groups</span>
+                    <span>Community</span>
+                </a>
+                {% elif user.user_type == 'teacher' %}
+                <a href="{% url 'teacher_dashboard' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'create_course' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">library_books</span>
+                    <span>Course Materials</span>
+                </a>
+                <a href="{% url 'chat_room' 'faculty' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">analytics</span>
+                    <span>Analytics</span>
+                </a>
+                {% endif %}
+
+                <div class="border-t border-edustream-border my-4"></div>
+
+                <a href="#" class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
+                    <span class="material-symbols-outlined text-edustream-emerald">settings</span>
+                    <span>Settings</span>
+                </a>
+                <a href="{% url 'logout' %}"
+                    class="flex items-center space-x-3 p-3 hover:bg-red-900 bg-opacity-20 text-red-400 rounded-lg transition">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="fixed top-20 right-4 z-50 space-y-2 pointer-events-none">
+        {% for message in messages %}
+        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 3000)" x-show="show"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform translate-x-8"
+            x-transition:enter-end="opacity-100 transform translate-x-0"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100 transform translate-x-0"
+            x-transition:leave-end="opacity-0 transform translate-x-8" class="bg-edustream-slate border border-edustream-border rounded-bento p-4 shadow-lg max-w-sm pointer-events-auto
+                    {% if message.tags == 'success' %}border-l-4 border-l-edustream-emerald{% endif %}
+                    {% if message.tags == 'error' %}border-l-4 border-l-red-500{% endif %}">
+            <p class="text-sm font-medium text-white">{{ message }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="flex-1 flex flex-col min-h-0 overflow-hidden relative z-0">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    {% comment %}
+    <footer class="bg-edustream-slate border-t border-edustream-border mt-0 h-16 flex items-center flex-shrink-0">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+            <div class="flex justify-between items-center text-sm text-text-muted">
+                <p>&copy; 2024 EDUSTREAM ELITE ACCESS</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="hover:text-edustream-emerald transition">PRIVACY POLICY</a>
+                    <a href="#" class="hover:text-edustream-emerald transition">TERMS OF SERVICE</a>
+                    <a href="#" class="hover:text-edustream-emerald transition">SUPPORT CENTER</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endcomment %}
+    {% endblock %}
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuDrawer = document.getElementById('mobile-menu-drawer');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
+
+        function openMobileMenu() {
+            mobileMenu.classList.remove('hidden');
+            setTimeout(() => {
+                mobileMenuDrawer.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMobileMenu() {
+            mobileMenuDrawer.classList.add('-translate-x-full');
+            setTimeout(() => {
+                mobileMenu.classList.add('hidden');
+            }, 300);
+        }
+
+        if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileMenu);
+        if (mobileMenuClose) mobileMenuClose.addEventListener('click', closeMobileMenu);
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', function (e) {
+                if (e.target === mobileMenu) closeMobileMenu();
+            });
+        }
+
+        // Notification Toggle Logic
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notification-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            const container = document.getElementById('notification-container');
+            const dropdown = document.getElementById('notification-dropdown');
+            if (!container.contains(event.target) && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+
+    {% if user.is_authenticated %}
+    {% include 'core/includes/chat_widget.html' %}
+    {% endif %}
+
+</body>
+
+</html>

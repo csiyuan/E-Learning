@@ -1,0 +1,565 @@
+{% extends 'base.html' %}
+<!-- CACHE BUST v2.0 - DIRECT FIX - FIXED at {{ NOW }} -->
+{% load static %}
+{% block title %}Faculty Hub - EDUSTREAM{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div class='h-full bg-edustream-navy overflow-hidden flex flex-col'>
+    <div class='flex flex-1 min-h-0 w-full'>
+        <!-- Sidebar Partial -->
+        {% include 'core/includes/sidebar.html' with active_page='dashboard' %}
+        <!-- Main Content - Scrollable Area -->
+        <main class='flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col min-h-0'>
+            {% block dashboard_content %}
+            <!-- Bento Grid Layout -->
+            <div class='grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 relative z-10'>
+                <!-- 1. Active Students (Left Column) -->
+                <div class='lg:col-span-3 flex flex-col min-h-0'>
+                    <div class='bento-card !p-0 flex flex-col h-full relative overflow-hidden group'>
+                        <div class='px-[25px] pt-[25px] pb-3 border-b border-edustream-border/30 bg-edustream-slate/50 backdrop-blur-sm z-10 flex-shrink-0'>
+                            <div class='flex justify-between items-center mb-0.5'>
+                                <h2 class='text-[10px] font-black text-white uppercase tracking-wider'>Active Students</h2>
+                                <div class='flex items-center gap-1.5 px-2 py-0.5 bg-edustream-emerald/10 rounded-full border border-edustream-emerald/20'>
+                                    <span class='relative flex h-1 w-1'>
+                                        <span class='animate-ping absolute inline-flex h-full w-full rounded-full bg-edustream-emerald opacity-75'></span>
+                                        <span class='relative inline-flex rounded-full h-1 w-1 bg-edustream-emerald'></span>
+                                    </span>
+                                    <span class='text-[7px] font-black text-edustream-emerald uppercase tracking-widest'>LIVE</span>
+                                </div>
+                            </div>
+                            <div class='relative mt-3'>
+                                <select id='student-course-filter' onchange='filterStudentsByCourse(this.value)'
+                                    class='w-full bg-edustream-navy/50 border border-edustream-border/40 rounded-xl px-3 py-2 text-[10px] text-white focus:outline-none focus:border-edustream-emerald/40 transition-all cursor-pointer appearance-none'>
+                                    <option value=''>All Courses</option>
+                                    {% for course in courses %}
+                                    <option value='{{ course.id }}' {% if selected_course_id == course.id %}selected{% endif %}>{{ course.course_code }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[14px] text-text-muted pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                        
+                        <div class='flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1'>
+                            {% for enrollment in active_students %}
+                            <div class='group/student flex items-center gap-3 hover:bg-white/5 rounded-xl px-3 py-2.5 transition-all cursor-pointer border border-transparent hover:border-white/5'>
+                                <div class='relative flex-shrink-0'>
+                                    <img src='https://ui-avatars.com/api/?name={{ enrollment.student.user.get_full_name|default:enrollment.student.user.username|urlencode }}&background=0D1117&color={% if enrollment.completion_status == "blocked" %}ef4444{% else %}10B981{% endif %}&size=64'
+                                        alt='Student' class='w-9 h-9 rounded-xl border border-edustream-border/40'>
+                                    <div class='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 {% if enrollment.completion_status == "blocked" %}bg-red-500{% else %}bg-edustream-emerald{% endif %} border-2 border-edustream-navy rounded-full'></div>
+                                </div>
+                                <div class='flex-1 min-w-0'>
+                                    <p class='text-[11px] font-bold text-white truncate'>{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username }}</p>
+                                    <p class='text-[9px] text-text-muted font-medium uppercase tracking-widest'>{{ enrollment.student.student_id|default:"ID-PENDING" }}</p>
+                                </div>
+                                <div class='opacity-0 group-hover/student:opacity-100 transition-opacity flex gap-1 transform translate-x-1 group-hover/student:translate-x-0 transition-all'>
+                                    {% if enrollment.completion_status == 'blocked' %}
+                                    <button onclick='openStudentActionModal("unblock", "{{ enrollment.course.id }}", "{{ enrollment.student.user.id }}", "{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username|escapejs }}")'
+                                        class='w-7 h-7 flex items-center justify-center hover:bg-edustream-emerald/20 text-edustream-emerald rounded-lg transition-colors'
+                                        title='Unblock Student'>
+                                        <span class='material-symbols-outlined text-[14px]'>lock_open</span>
+                                    </button>
+                                    {% else %}
+                                    <button onclick='openStudentActionModal("block", "{{ enrollment.course.id }}", "{{ enrollment.student.user.id }}", "{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username|escapejs }}")'
+                                        class='w-7 h-7 flex items-center justify-center hover:bg-red-500/20 text-text-muted hover:text-red-400 rounded-lg transition-colors'
+                                        title='Block Student'>
+                                        <span class='material-symbols-outlined text-[14px]'>block</span>
+                                    </button>
+                                    {% endif %}
+                                    <button onclick='openStudentActionModal("remove", "{{ enrollment.course.id }}", "{{ enrollment.student.user.id }}", "{{ enrollment.student.user.get_full_name|default:enrollment.student.user.username|escapejs }}")'
+                                        class='w-7 h-7 flex items-center justify-center hover:bg-red-500/20 text-text-muted hover:text-red-400 rounded-lg transition-colors'
+                                        title='Remove Student'>
+                                        <span class='material-symbols-outlined text-[14px]'>person_remove</span>
+                                    </button>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class='flex flex-col items-center justify-center h-full opacity-30 py-10'>
+                                <span class='material-symbols-outlined text-3xl mb-2'>group_off</span>
+                                <p class='text-[10px] uppercase font-black tracking-[0.2em]'>No active students</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Central Command (Center Column) -->
+                <div class='lg:col-span-5 flex flex-col min-h-0 gap-3'>
+                    <div class='bento-card flex-1 px-6 pt-4 pb-6 flex flex-col relative overflow-hidden group'>
+                        <!-- Decorative Header -->
+                        <div class='flex items-center justify-between mb-5'>
+                            <div class='flex items-center gap-4'>
+                                <div class='w-12 h-12 rounded-2xl bg-edustream-emerald/10 border border-edustream-emerald/30 flex items-center justify-center'>
+                                    <span id='upload-icon' class='material-symbols-outlined text-edustream-emerald text-2xl'>cloud_upload</span>
+                                </div>
+                                <div>
+                                    <h2 class="text-xs font-bold text-white mb-0.5">Course Management</h2>
+                                    <p class="text-[7px] text-text-muted font-normal uppercase tracking-wider opacity-70 leading-tight">Create Materials or Assignments</p>
+                                </div>
+                            </div>
+                            
+                            <div class='flex bg-edustream-navy/50 rounded-xl p-1 border border-edustream-border/40'>
+                                <button type='button' onclick='setUploadType("material")' id='btn-material'
+                                    class='w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all bg-edustream-emerald text-edustream-navy shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center uppercase tracking-wider'>Material</button>
+                                <button type='button' onclick='setUploadType("broadcast")' id='btn-broadcast'
+                                    class='w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all text-text-muted hover:text-white text-center uppercase tracking-wider'>Broadcast</button>
+                                <button type='button' onclick='setUploadType("deadline")' id='btn-deadline'
+                                    class='w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all text-text-muted hover:text-white text-center uppercase tracking-wider'>Deadline</button>
+                            </div>
+                        </div>
+
+                        <form id='unified-upload-form' action='{% url "unified_dashboard_action" %}' method='POST' enctype='multipart/form-data' class='flex flex-col gap-3 flex-1'>
+                            {% csrf_token %}
+                            <input type='hidden' name='upload_type' id='hidden-upload-type' value='material'>
+                            
+                            <div class='space-y-2.5'>
+                                <div class='flex gap-4'>
+                                    <div class='group/input flex-1'>
+                                        <label class='text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2 block ml-1'>Title</label>
+                                        <input type='text' name='title' id='input-title' placeholder='Ex: Semester 2 Project Guidelines'
+                                            class='w-full h-[48px] bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-5 py-0 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all placeholder:text-white/20'
+                                            required>
+                                    </div>
+                                    <div class='group/input w-1/3 min-w-[130px]'>
+                                        <label class='text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2 block ml-1'>Target Course</label>
+                                        <div class="relative h-[48px]">
+                                            <select name="course_id" id="course-dropdown"
+                                                class='w-full h-full bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-3 py-0 text-[10px] text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all cursor-pointer' required>
+                                                <option value="" disabled selected>Select Target Course</option>
+                                                {% for course in courses %}
+                                                <option value="{{ course.id }}">{{ course.course_code }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="deadline-fields" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div class='group/input'>
+                                        <label class='text-[9px] font-black text-edustream-emerald uppercase tracking-[0.2em] mb-2 block ml-1'>Submission Deadline</label>
+                                        <input type='text' name='due_date' id='input-due-date'
+                                            class='w-full bg-edustream-navy/30 border border-edustream-emerald/30 rounded-2xl px-5 py-4 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all'>
+                                    </div>
+                                </div>
+                                
+                                <div class='group/input'>
+                                    <label class='text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2 block ml-1'>Description</label>
+                                    <textarea name='description' id='input-description' placeholder='Describe the deployment objectives...' rows='3'
+                                        class='w-full bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-5 py-4 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all placeholder:text-white/20 resize-none'></textarea>
+                                </div>
+                            </div>
+
+                             <div id='drop-zone'
+                                 class='relative flex-1 border-2 border-dashed border-edustream-border/40 hover:border-edustream-emerald/40 rounded-[32px] bg-edustream-navy/20 transition-all group/drop overflow-hidden min-h-[180px] cursor-pointer'>
+                                 <input type='file' name='file' id='file-input' multiple onchange='handleFileSelect(this)'
+                                     class='absolute inset-0 opacity-0 cursor-pointer z-20'>
+                                 
+                                 <div id='upload-prompt' class='absolute inset-0 flex flex-col items-center justify-center gap-4 transition-all group-hover/drop:scale-105'>
+                                     <div class='w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/5'>
+                                         <span class='material-symbols-outlined text-3xl text-text-muted'>add_to_drive</span>
+                                     </div>
+                                     <div class='text-center'>
+                                         <p class='text-[10px] font-extrabold text-white mb-1 uppercase tracking-widest'>Upload Files</p>
+                                         <p class='text-[9px] text-text-muted font-bold tracking-tight uppercase opacity-40'>Click or drag files here to upload</p>
+                                     </div>
+                                 </div>
+                                 
+                                 <div id='file-list-container' class='hidden absolute inset-0 bg-edustream-slate p-6 flex flex-col z-30 overflow-y-auto custom-scrollbar'>
+                                     <div class='flex items-center justify-between mb-4'>
+                                         <p class='text-[9px] font-black text-edustream-emerald uppercase tracking-widest'>Artifacts Ready</p>
+                                         <button type='button' onclick='event.stopPropagation(); resetFiles(event);' class='text-[9px] font-black text-text-muted hover:text-white uppercase tracking-widest'>Clear All</button>
+                                     </div>
+                                     <div id='file-bars-wrapper' class='space-y-2'></div>
+                                 </div>
+                             </div>
+
+                            <button type='submit' id="deploy-btn"
+                                class='w-full bg-gradient-to-r from-edustream-emerald to-emerald-600 text-white font-black py-5 rounded-[20px] transition-all shadow-[0_10px_40px_-10px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_50px_-10px_rgba(16,185,129,0.4)] hover:-translate-y-1 active:scale-[0.98] uppercase tracking-[0.3em] text-[10px]'>
+                                Submit Content
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 3. Right Column (Courses & Activity) -->
+                <div class='lg:col-span-4 flex flex-col min-h-0 gap-3'>
+                    <!-- Your Courses -->
+                    <div class='bento-card p-6 h-[45%] flex flex-col min-h-0'>
+                        <div class='flex justify-between items-center mb-6'>
+                            <h3 class='text-[10px] font-black text-white uppercase tracking-wider'>Your Courses</h3>
+                            <a href='{% url "create_course" %}' class='w-8 h-8 rounded-full border border-edustream-border/40 flex items-center justify-center hover:bg-edustream-emerald/10 hover:border-edustream-emerald/40 transition-all group'>
+                                <span class='material-symbols-outlined text-[18px] text-text-muted group-hover:text-edustream-emerald'>add</span>
+                            </a>
+                        </div>
+                        <div class='flex-1 overflow-y-auto custom-scrollbar space-y-2.5 pr-1'>
+                            {% for course in courses %}
+                            <a href='{% url "course_detail" course.id %}'
+                                class='block p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-edustream-emerald/30 hover:bg-white/[0.04] transition-all group'>
+                                <div class='flex items-center gap-4'>
+                                    <div class='w-11 h-11 rounded-xl bg-edustream-navy flex items-center justify-center border border-white/5 font-black text-[9px] text-edustream-emerald uppercase tracking-tighter group-hover:scale-110 transition-transform text-center px-1'>
+                                        {{ course.course_code|default:"HUB" }}
+                                    </div>
+                                    <div class='flex-1 min-w-0'>
+                                        <h4 class='text-[11px] font-bold text-white truncate group-hover:text-edustream-emerald transition-colors'>{{ course.title }}</h4>
+                                        <div class='flex items-center gap-3 mt-1'>
+                                            <span class='text-[8px] text-text-muted font-black uppercase tracking-widest'>{{ course.student_count }} Personnel</span>
+                                        </div>
+                                    </div>
+                                    <span class='material-symbols-outlined text-text-muted group-hover:text-white transition-colors transform group-hover:translate-x-1 duration-300'>arrow_forward_ios</span>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class='bento-card p-6 flex-1 flex flex-col min-h-0'>
+                        <div class='flex items-center gap-3 mb-6'>
+                            <h3 class='text-[10px] font-black text-white uppercase tracking-wider'>Network Feed</h3>
+                            <div class='h-[1px] flex-1 bg-gradient-to-r from-white/5 to-transparent'></div>
+                        </div>
+                        <div class='flex-1 overflow-y-auto custom-scrollbar space-y-5 pr-1'>
+                            {% for item in recent_activity %}
+                            <div class='flex gap-4 group/item'>
+                                <div class='flex flex-col items-center gap-2'>
+                                    <div class='w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover/item:border-edustream-emerald/40 transition-all'>
+                                        <span class='material-symbols-outlined text-base text-text-muted group-hover/item:text-edustream-emerald'>
+                                            {% if item.type == 'material' %}description{% elif item.type == 'deadline' %}event_note{% else %}campaign{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class='w-[1px] flex-1 bg-gradient-to-b from-white/10 to-transparent'></div>
+                                </div>
+                                <div class='flex-1 pt-1'>
+                                    <div class='flex justify-between items-start gap-4'>
+                                        <p class='text-[11px] font-bold text-white leading-tight'>
+                                            {% if item.type == 'status' %}
+                                                {{ item.title|default:item.content|truncatechars:40 }}
+                                            {% else %}
+                                                {{ item.title }}
+                                            {% endif %}
+                                        </p>
+                                        <span class='text-[8px] font-black text-text-muted uppercase tracking-widest flex-shrink-0'>
+                                            {{ item.date|timesince }}
+                                        </span>
+                                    </div>
+                                    <p class='text-[9px] text-text-muted font-medium uppercase tracking-widest mt-1.5 flex items-center gap-1.5'>
+                                        <span class='w-1 h-1 rounded-full {% if item.type == "material" %}bg-edustream-emerald{% elif item.type == "deadline" %}bg-orange-400{% else %}bg-blue-400{% endif %}'></span>
+                                        {% if item.type == 'material' %}Course Material{% elif item.type == 'deadline' %}Assignment Deadline{% else %}Broadcast{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class='flex flex-col items-center justify-center h-full opacity-20 py-10'>
+                                <span class='material-symbols-outlined text-3xl mb-2'>hub</span>
+                                <p class='text-[10px] uppercase font-black tracking-[0.2em] text-center ml-2'>No active<br>transmissions</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id='student-action-modal' class='fixed inset-0 z-[100] hidden'>
+    <div class='fixed inset-0 bg-edustream-dark/80 backdrop-blur-sm'></div>
+    <div class='fixed inset-0 z-10 flex items-center justify-center p-4'>
+        <div class='bg-edustream-slate border border-edustream-border rounded-xl p-6 w-full max-w-md shadow-2xl'>
+            <h3 class='text-base font-bold text-white mb-2' id='modal-title'>Confirm Action</h3>
+            <p class='text-sm text-text-muted mb-6' id='modal-message'>Are you sure?</p>
+            <div class='flex justify-end gap-3'>
+                <button type='button' onclick='closeStudentActionModal()'
+                    class='px-4 py-2 text-sm font-bold text-text-muted hover:text-white text-center transition-colors'>Cancel</button>
+                <form id='student-action-form' method='GET'>
+                    <button type='submit' id='modal-confirm-btn'
+                        class='px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-500 transition-all'>Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Selection Modal -->
+<div id="course-selector-modal" class="fixed inset-0 z-[150] hidden">
+    <div class="fixed inset-0 bg-edustream-dark/95 backdrop-blur-md"></div>
+    <div class="fixed inset-0 z-10 flex items-center justify-center p-4">
+        <div class="bg-edustream-slate border border-edustream-border/60 rounded-[32px] w-full max-w-xl shadow-[0_0_80px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in duration-300">
+            <!-- Modal Header -->
+            <div class="px-8 py-6 border-b border-edustream-border/30 flex items-center justify-between bg-edustream-slate/40">
+                <div class="flex items-center gap-4">
+                   <div class="w-2.5 h-2.5 rounded-full bg-edustream-emerald animate-pulse"></div>
+                   <h3 class="text-[11px] font-black text-white uppercase tracking-[0.3em]">Deployment Configuration</h3>
+                </div>
+                <button onclick="closeCourseSelector()" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/5 text-text-muted hover:text-white transition-all group">
+                    <span class="material-symbols-outlined text-xl group-hover:rotate-90 transition-transform">close</span>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-8">
+                <h4 class="text-white text-base font-bold mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-edustream-emerald">target</span>
+                    Select Target Course
+                </h4>
+                
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    {% for course in courses %}
+                    <div id="course-opt-{{ course.id }}" onclick="selectCourseForUpload('{{ course.id }}', '{{ course.title|escapejs }}')" 
+                         class="course-option group relative bg-edustream-navy/30 border border-edustream-border/30 rounded-2xl p-5 cursor-pointer hover:border-edustream-emerald/50 hover:bg-edustream-emerald/5 transition-all duration-300">
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="text-[10px] font-black text-edustream-emerald/60 uppercase tracking-widest">Target Node</span>
+                            <span class="text-xs text-white font-bold truncate w-full">{{ course.title }}</span>
+                        </div>
+                        <div class="absolute top-4 right-4 check-icon opacity-0 scale-75 transition-all duration-300">
+                            <span class="material-symbols-outlined text-edustream-emerald text-base">check_circle</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div id="course-opt-all" onclick="selectCourseForUpload('all', 'GLOBAL')" 
+                         class="course-option hidden group relative bg-edustream-navy/30 border border-edustream-border/30 rounded-2xl p-5 cursor-pointer hover:border-edustream-emerald/50 hover:bg-edustream-emerald/5 transition-all duration-300">
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Global</span>
+                            <span class="text-xs text-white font-bold truncate w-full">Apply to all courses</span>
+                        </div>
+                        <div class="absolute top-4 right-4 check-icon opacity-0 scale-75 transition-all duration-300">
+                            <span class="material-symbols-outlined text-blue-400 text-base">public</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-center py-6 bg-edustream-navy/20 rounded-2xl border border-edustream-border/20 border-dashed">
+                    <div class="flex flex-col items-center gap-2 opacity-40">
+                        <span class="material-symbols-outlined text-3xl">hub</span>
+                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-center">Protocol V2.0 Active</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-8 py-6 bg-edustream-navy/40 border-t border-edustream-border/20 flex justify-end items-center gap-6">
+                <p id="selection-status" class="text-[10px] text-text-muted font-bold uppercase tracking-widest mr-auto">No course selected</p>
+                <button onclick="closeCourseSelector()" class="text-[10px] font-bold text-text-muted hover:text-white transition-all uppercase tracking-widest">Abort</button>
+                <button id="confirm-upload-btn" onclick="submitUnifiedUpload()" disabled 
+                        class="px-10 py-3 bg-gradient-to-r from-edustream-emerald to-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-edustream-emerald/20 opacity-30 cursor-not-allowed transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100">
+                    Deploy Materials
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Form for actual submission -->
+<form id="hidden-submission-form" method="POST" action="{% url 'unified_dashboard_action' %}" enctype="multipart/form-data" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="upload_type" id="hidden-upload-type">
+    <input type="hidden" name="title" id="hidden-title">
+    <input type="hidden" name="description" id="hidden-description">
+    <input type="hidden" name="course_id" id="hidden-course-id">
+    <div id="hidden-file-container"></div>
+</form>
+
+<style>
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-animate-in {
+        animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .course-option {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .course-option.selected {
+        border-color: #10B981 !important;
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.2);
+        transform: translateY(-2px);
+    }
+    .course-option.selected .check-icon {
+        opacity: 1;
+        scale: 1;
+    }
+    .course-option.selected span:first-child {
+        color: #10B981;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.1);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(16, 185, 129, 0.3);
+        border-radius: 10px;
+    }
+</style>
+
+<script>
+    let currentUploadType = 'material';
+    let selectedCourseId = null;
+
+    function setUploadType(type) {
+        currentUploadType = type;
+        const btnMaterial = document.getElementById('btn-material');
+        const btnBroadcast = document.getElementById('btn-broadcast');
+        const btnDeadline = document.getElementById('btn-deadline');
+        const titleInput = document.getElementById('input-title');
+        const uploadIcon = document.getElementById('upload-icon');
+        const deadlineFields = document.getElementById('deadline-fields');
+        const dueDateInput = document.getElementById('input-due-date');
+        const hiddenType = document.getElementById('hidden-upload-type');
+        const deployBtn = document.getElementById('deploy-btn');
+
+        // Reset all buttons
+        [btnMaterial, btnBroadcast, btnDeadline].forEach(btn => {
+            btn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all text-text-muted hover:text-white text-center uppercase tracking-wider';
+        });
+
+        // Activate selected
+        const activeBtn = document.getElementById(`btn-${type}`);
+        activeBtn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all bg-edustream-emerald text-edustream-navy shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center uppercase tracking-wider';
+        
+        hiddenType.value = type;
+
+        if (type === 'material') {
+            titleInput.placeholder = 'Ex: Semester 2 Project Guidelines';
+            titleInput.required = true;
+            uploadIcon.textContent = 'cloud_upload';
+            deadlineFields.classList.add('hidden');
+            dueDateInput.required = false;
+            deployBtn.innerText = 'UPLOAD MATERIAL';
+        } else if (type === 'broadcast') {
+            titleInput.placeholder = 'Subject (Optional)';
+            titleInput.required = false;
+            uploadIcon.textContent = 'campaign';
+            deadlineFields.classList.add('hidden');
+            dueDateInput.required = false;
+            deployBtn.innerText = 'SEND BROADCAST';
+        } else if (type === 'deadline') {
+            titleInput.placeholder = 'Ex: Final Architecture Project';
+            titleInput.required = true;
+            uploadIcon.textContent = 'timer';
+            deadlineFields.classList.remove('hidden');
+            dueDateInput.required = true;
+            deployBtn.innerText = 'SET DEADLINE';
+        }
+    }
+
+    // Modal logic for hidden submission is no longer needed since we use a direct form now.
+    // However, we still have the student action modal.
+
+    function validateAndOpenSelector() {
+        const form = document.getElementById('unified-upload-form');
+        if (form.checkValidity()) {
+            openCourseSelector();
+        } else {
+            form.reportValidity();
+        }
+    }
+
+    function openStudentActionModal(action, courseId, studentId, studentName) {
+        const modal = document.getElementById('student-action-modal');
+        const title = document.getElementById('modal-title');
+        const message = document.getElementById('modal-message');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const form = document.getElementById('student-action-form');
+        
+        modal.classList.remove('hidden');
+        form.action = `/course/${courseId}/remove-student/${studentId}/`;
+        
+        let actionInput = document.getElementById('modal-action-input');
+        if (!actionInput) {
+            actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.id = 'modal-action-input';
+            form.appendChild(actionInput);
+        }
+        actionInput.value = action;
+        
+        if (action === 'block') {
+            title.textContent = 'Neutralize Protocol';
+            message.textContent = `Are you sure you want to restrict ${studentName} access?`;
+            confirmBtn.className = 'px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all';
+        } else if (action === 'unblock') {
+            title.textContent = 'Re-instate Personnel';
+            message.textContent = `Confirm re-activation of ${studentName} course access?`;
+            confirmBtn.className = 'px-6 py-2 text-sm font-bold bg-edustream-emerald text-white rounded-lg hover:bg-emerald-500 shadow-lg shadow-edustream-emerald/20 transition-all';
+        } else {
+            title.textContent = 'Remove Connection';
+            message.textContent = `Confirm permanent removal of ${studentName} from course hub?`;
+            confirmBtn.className = 'px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all';
+        }
+    }
+
+    function closeStudentActionModal() { 
+        document.getElementById('student-action-modal').classList.add('hidden'); 
+    }
+
+    function filterStudentsByCourse(courseId) {
+        const url = new URL(window.location.href);
+        if (courseId) url.searchParams.set('course_filter', courseId);
+        else url.searchParams.delete('course_filter');
+        window.location.href = url.toString();
+    }
+
+    function handleFileSelect(input) {
+        const prompt = document.getElementById('upload-prompt');
+        const list = document.getElementById('file-list-container');
+        const wrapper = document.getElementById('file-bars-wrapper');
+        
+        if (input.files.length > 0) {
+            prompt.classList.add('hidden');
+            list.classList.remove('hidden');
+            wrapper.innerHTML = '';
+            Array.from(input.files).forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'bg-white/5 p-3 rounded-xl border border-white/5 text-[9px] text-white truncate flex items-center gap-3 group/file hover:bg-white/10 transition-colors';
+                div.innerHTML = `
+                    <span class="material-symbols-outlined text-[14px] text-edustream-emerald">description</span>
+                    <span class="flex-1 truncate">${f.name}</span>
+                    <span class="text-[8px] text-text-muted font-black uppercase">${(f.size / 1024).toFixed(1)}KB</span>
+                `;
+                wrapper.appendChild(div);
+            });
+        }
+    }
+
+    function resetFiles(event) {
+        if (event) event.preventDefault();
+        // Since input might have been moved to hidden form, we find it there if needed or just reset it
+        const input = document.getElementById('file-input');
+        input.value = '';
+        
+        // If it was moved to the hidden form, move it back to the dropzone
+        const dropZone = document.getElementById('drop-zone');
+        if (!dropZone.contains(input)) {
+            dropZone.appendChild(input);
+        }
+        
+        document.getElementById('upload-prompt').classList.remove('hidden');
+        document.getElementById('file-list-container').classList.add('hidden');
+    }
+
+    window.onclick = function (e) {
+        const sam = document.getElementById('student-action-modal');
+        const csm = document.getElementById('course-selector-modal');
+        if (e.target === sam) closeStudentActionModal();
+        if (e.target === csm) closeCourseSelector();
+    }
+
+    // Initialize Flatpickr for premium dark-mode date/time selection
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr("#input-due-date", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            theme: "material_dark",
+            minDate: "today",
+            disableMobile: "true"
+        });
+    });
+</script>
+{% endblock %}

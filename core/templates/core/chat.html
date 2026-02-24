@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Academic Center {% if current_course %}- {{ current_course.title }}{% endif %}{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="flex h-[calc(100vh-4rem)] overflow-hidden bg-edustream-navy">
+
+    <!-- MAIN NAVIGATION SIDEBAR -->
+    {% include 'core/includes/sidebar.html' with active_page='community' %}
+    <aside
+        class="w-[254px] bg-edustream-slate border-r border-edustream-border flex flex-col flex-shrink-0 z-20 transition-all duration-300 transform -translate-x-full md:translate-x-0 absolute md:relative h-full"
+        id="channels-sidebar">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-edustream-border flex items-center justify-between">
+            <h2 class="font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-edustream-emerald">forum</span>
+                Channels
+            </h2>
+            <button class="md:hidden text-text-secondary hover:text-white" onclick="toggleChannels()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Channels List -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+            <p class="px-3 text-xs font-bold text-text-muted uppercase tracking-wider mb-1 mt-2">My Courses</p>
+            {% for course in enrolled_courses %}
+            <a href="{% url 'chat_room' course.id %}"
+                class="group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all {% if room_name == course.id|stringformat:'s' or room_name == course.course_code %}bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20{% else %}text-text-secondary hover:bg-edustream-navy hover:text-white{% endif %}">
+                <div
+                    class="w-8 h-8 rounded-lg flex items-center justify-center {% if room_name == course.id|stringformat:'s' or room_name == course.course_code %}bg-edustream-emerald text-white shadow-lg shadow-edustream-emerald/20{% else %}bg-edustream-navy text-text-muted group-hover:bg-edustream-border{% endif %}">
+                    <span class="material-symbols-outlined text-sm">school</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-bold truncate">{{ course.title }}</h3>
+                    <p class="text-[10px] opacity-70 truncate">{{ course.course_code }}</p>
+                </div>
+                {% if room_name == course.id|stringformat:'s' or room_name == course.course_code %}
+                <span class="w-1.5 h-1.5 rounded-full bg-edustream-emerald"></span>
+                {% endif %}
+            </a>
+            {% empty %}
+            <div class="px-3 py-4 text-center">
+                <p class="text-xs text-text-muted">No courses yet.</p>
+                {% if user.user_type == 'student' %} <a href="{% url 'course_browse' %}"
+                    class="mt-2 text-xs text-edustream-emerald hover:underline">Browse
+                    Courses</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- CENTER: CHAT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 relative bg-[#0B1120]">
+
+        {% if room_name != 'general' %}
+        <!-- Chat Header -->
+        <header
+            class="h-16 border-b border-edustream-border flex items-center justify-between px-4 lg:px-6 bg-edustream-navy/50 backdrop-blur-sm sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <button class="md:hidden text-text-secondary hover:text-white" onclick="toggleChannels()">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-edustream-emerald to-cyan-600 flex items-center justify-center shadow-lg shadow-edustream-emerald/10">
+                    <span class="material-symbols-outlined text-white">school</span>
+                </div>
+
+                <div>
+                    <h1 class="font-bold text-white leading-tight">
+                        {% if current_course %}
+                        {{ current_course.title }}
+                        {% else %}
+                        {{ room_name|upper }}
+                        {% endif %}
+                    </h1>
+                    <div class="flex items-center gap-2 text-xs text-edustream-emerald">
+                        <span class="w-1.5 h-1.5 rounded-full bg-edustream-emerald animate-pulse"></span>
+                        <span class="font-medium">Academic Channel</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button
+                    class="w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-edustream-border/50 hover:text-white transition-colors"
+                    title="Members">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                </button>
+                <button
+                    class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-edustream-border/50 hover:text-white transition-colors"
+                    onclick="toggleMaterials()" title="Material Info">
+                    <span class="material-symbols-outlined text-[20px]">info</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 custom-scrollbar scroll-smooth">
+            {% for message in chat_history %}
+            <div class="flex flex-col gap-1 w-full animate-fade-in-up {% if message.sender == request.user %}translate-x-[3px]{% endif %}">
+                <!-- Name and Time -->
+                <div class="flex items-baseline gap-2 {% if message.sender == request.user %}justify-end pr-[40px]{% else %}justify-start pl-[40px]{% endif %}">
+                    <span
+                        class="text-[11px] font-bold {% if message.sender == request.user %}text-edustream-emerald{% else %}text-white{% endif %}">
+                        {% if message.sender == request.user %}
+                        Me
+                        {% else %}
+                        {{ message.sender.get_full_name|default:message.sender.username }}
+                        {% endif %}
+                    </span>
+                    <span class="text-[10px] text-text-muted local-time" data-timestamp="{{ message.created_at.isoformat }}">
+                        {{ message.created_at|date:"H:i" }}
+                    </span>
+                </div>
+
+                <!-- Avatar and Bubble Row -->
+                <div class="flex items-center gap-3 {% if message.sender == request.user %}flex-row-reverse{% endif %}">
+                    <!-- Avatar -->
+                    <div
+                        class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center {% if message.sender == request.user %}bg-edustream-emerald{% else %}bg-edustream-border{% endif %}">
+                        {% if message.sender.profile_pic %}
+                        <img src="{{ message.sender.profile_pic.url }}" class="w-full h-full rounded-full object-cover">
+                        {% else %}
+                        <span class="text-[10px] font-bold text-white">
+                            {{ message.sender.username|first|upper }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Message Bubble -->
+                    <div
+                        class="px-3 py-2 rounded-xl text-sm leading-relaxed shadow-sm max-w-[75%] {% if message.sender == request.user %}bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20 rounded-tr-none{% else %}bg-edustream-slate text-text-secondary border border-edustream-border rounded-tl-none{% endif %}">
+                        {{ message.content }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="flex flex-col items-center justify-center h-full opacity-50">
+                <span class="material-symbols-outlined text-5xl text-text-muted mb-2">forum</span>
+                <p class="text-text-muted text-sm">No messages yet. Start the discussion!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 lg:px-6 lg:py-4 bg-edustream-navy border-t border-edustream-border">
+            <form id="chat-form" class="relative max-w-4xl mx-auto">
+                <div class="absolute left-0 top-0 h-full flex items-center pl-3">
+                    <button type="button"
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:text-white hover:bg-edustream-border/50 transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">add_circle</span>
+                    </button>
+                </div>
+
+                <input type="text" id="chat-message-input" autocomplete="off"
+                    class="w-full bg-edustream-slate text-white placeholder:text-text-muted rounded-xl py-3.5 pl-12 pr-12 border border-edustream-border focus:border-edustream-emerald focus:ring-1 focus:ring-edustream-emerald transition-all shadow-lg"
+                    placeholder="Share your academic insights...">
+
+                <div class="absolute right-0 top-0 h-full flex items-center pr-2">
+                    <button type="submit"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg bg-edustream-emerald text-edustream-navy hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20">
+                        <span class="material-symbols-outlined text-[20px] font-bold">send</span>
+                    </button>
+                </div>
+            </form>
+            <div class="max-w-4xl mx-auto flex items-center justify-between mt-2 px-1">
+                <p class="text-[10px] text-text-muted flex items-center gap-1">
+                    <span class="w-1 h-1 rounded-full bg-edustream-emerald/50"></span>
+                    Securing your academic discussion
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div class="flex flex-1 flex-col items-center justify-center h-full text-center p-8 text-text-muted opacity-60">
+            <div class="w-16 h-16 rounded-3xl bg-edustream-slate flex items-center justify-center mb-4 shadow-2xl">
+                <span class="material-symbols-outlined text-3xl">chat</span>
+            </div>
+            <p class="text-sm font-medium text-white mb-2">No Course Selected</p>
+            <p class="text-xs leading-relaxed max-w-[200px] mx-auto opacity-70">Select a specific course channel from
+                the left sidebar to start chatting.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- RIGHT SIDEBAR: MATERIALS -->
+    <aside
+        class="w-[400px] bg-edustream-slate border-l border-edustream-border hidden lg:flex flex-col flex-shrink-0 z-20 absolute right-0 h-full lg:relative"
+        id="materials-sidebar">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-edustream-border">
+            <h2 class="font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-edustream-emerald">folder_open</span>
+                Academic Materials
+            </h2>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            {% if current_course %}
+            <div class="space-y-4">
+                <!-- Course Node Card -->
+                {% if user.user_type == 'teacher' %}
+                <a href="{% url 'course_detail' current_course.id %}"
+                    class="block p-4 rounded-xl bg-gradient-to-br from-edustream-navy to-edustream-slate border border-edustream-border relative overflow-hidden group hover:border-edustream-emerald/40 transition-all">
+                    <div class="relative z-10">
+                        <p class="text-xs text-text-muted uppercase tracking-wider mb-1">Architectural Hub</p>
+                        <h3 class="text-lg font-bold text-white group-hover:text-edustream-emerald transition-colors">{{ current_course.title }}</h3>
+                        <p class="text-xs text-edustream-emerald mt-1 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                            View Course Details
+                        </p>
+                    </div>
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="material-symbols-outlined text-6xl text-edustream-emerald">hub</span>
+                    </div>
+                </a>
+                {% else %}
+                <div
+                    class="p-4 rounded-xl bg-gradient-to-br from-edustream-navy to-edustream-slate border border-edustream-border relative overflow-hidden group">
+                    <div class="relative z-10">
+                        <p class="text-xs text-text-muted uppercase tracking-wider mb-1">Course Node</p>
+                        <h3 class="text-lg font-bold text-white">{{ current_course.title }}</h3>
+                        <p class="text-xs text-edustream-emerald mt-1 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                            Sync Active
+                        </p>
+                    </div>
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="material-symbols-outlined text-6xl text-edustream-emerald">hub</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Materials List -->
+                <div>
+                    <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 px-1">Available Resources
+                    </h3>
+
+                    {% if upcoming_course_deadlines %}
+                    <div class="mb-6 space-y-3">
+                        {% for deadline in upcoming_course_deadlines %}
+                        <div class="pinned-assignment group/pinned animate-in fade-in zoom-in-95 duration-500">
+                            <div class="flex items-center justify-between mb-2 px-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[12px] text-orange-400 animate-pulse">priority_high</span>
+                                    <p class="text-[9px] font-black text-orange-400 uppercase tracking-[0.3em]">Course Priority</p>
+                                </div>
+                            </div>
+                            <a href="{% if user.user_type == 'teacher' %}{% url 'view_submissions' deadline.id %}{% else %}{% url 'submit_assignment' deadline.id %}{% endif %}" 
+                               class="cursor-pointer bg-orange-400/5 hover:bg-orange-400/10 backdrop-blur-sm rounded-xl p-3 transition-all duration-300 flex items-center justify-between border border-orange-400/20 shadow-lg shadow-orange-400/5">
+                                <div class="flex items-center space-x-3 flex-1">
+                                    <div class="w-9 h-9 rounded-lg bg-orange-400 flex items-center justify-center text-edustream-navy shadow-sm">
+                                        <span class="material-symbols-outlined text-sm font-black">assignment_late</span>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-bold text-[13px] text-white group-hover/pinned:text-orange-400 transition-colors truncate max-w-[180px]">
+                                            {{ deadline.title }}
+                                        </h5>
+                                        <p class="text-[10px] text-orange-400/80 mt-0.5 font-bold uppercase tracking-tight">{{ deadline.time_remaining }} REMAINING</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    {% if user.user_type == 'teacher' %}
+                                    <span class="text-[8px] bg-orange-400 text-edustream-navy px-1.5 py-0.5 rounded font-black uppercase">{{ deadline.submission_count }} SUBMISSIONS</span>
+                                    {% else %}
+                                        {% if deadline.is_submitted %}
+                                        <span class="text-[8px] bg-edustream-emerald text-edustream-navy px-1.5 py-0.5 rounded font-black uppercase">SUBMITTED</span>
+                                        {% else %}
+                                        <span class="text-[8px] bg-orange-400 text-edustream-navy px-1.5 py-0.5 rounded font-black uppercase">UNSUBMITTED</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    <span class="material-symbols-outlined text-orange-400 text-xs">arrow_forward</span>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if course_materials %}
+                    <div class="space-y-4">
+                        {% regroup course_materials by title as materials_by_title %}
+                        {% for group in materials_by_title %}
+                        <div
+                            class="relative p-4 rounded-xl bg-edustream-navy border border-edustream-border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-edustream-emerald/50 bg-gradient-to-b from-transparent to-edustream-slate/20 group">
+                            
+                                {% with first_material=group.list.0 %}
+                                <!-- Grouped Header -->
+                                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-edustream-border/30">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-edustream-emerald/10 text-edustream-emerald flex items-center justify-center flex-shrink-0 group-hover:bg-edustream-emerald group-hover:text-edustream-navy transition-all">
+                                        <span class="material-symbols-outlined">
+                                            folder_zip
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <h4
+                                                class="text-sm font-bold text-white group-hover:text-edustream-emerald transition-colors leading-tight truncate">
+                                                {{ first_material.title }}</h4>
+                                            <span class="text-[9px] font-bold text-edustream-emerald border border-edustream-emerald/30 bg-edustream-emerald/10 rounded px-1.5 py-0.5 whitespace-nowrap">{{ group.list|length }} file{{ group.list|length|pluralize }}</span>
+                                        </div>
+                                        <p class="text-[10px] text-text-muted mt-1 uppercase tracking-tighter">
+                                            {{ first_material.uploaded_at|date:"M d, Y" }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Full Description -->
+                                {% if first_material.description %}
+                                <div class="mt-2 text-xs text-text-secondary leading-relaxed font-medium mb-3">
+                                    {{ first_material.description }}
+                                </div>
+                                {% endif %}
+
+                                <!-- Sub-items list matching single-file aesthetic -->
+                                <div class="flex flex-col gap-0 {% if first_material.description %}border-t border-edustream-border/30 pt-3 mt-1{% endif %}">
+                                    {% for material in group.list %}
+                                    <div class="flex items-center gap-3 py-3 group/sub border-b border-edustream-border/10 last:border-0 hover:bg-edustream-slate/20 rounded-lg px-2 -mx-2 transition-all">
+                                        <div
+                                            class="w-8 h-8 rounded-lg bg-edustream-emerald/10 text-edustream-emerald flex items-center justify-center flex-shrink-0 group-hover/sub:bg-edustream-emerald group-hover/sub:text-edustream-navy transition-all">
+                                            <span class="material-symbols-outlined text-[18px]">
+                                                {% if material.file_type == 'pdf' %}
+                                                description
+                                                {% elif material.file_type == 'mp4' or material.file_type == 'mov' %}
+                                                movie
+                                                {% else %}
+                                                article
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <h4
+                                                class="text-[11px] font-bold text-white group-hover/sub:text-edustream-emerald transition-colors leading-tight truncate">
+                                                {{ material.filename }}</h4>
+                                            <p class="text-[9px] text-text-muted mt-1 uppercase tracking-tighter">
+                                                {{ material.file.size|filesizeformat }}
+                                            </p>
+                                        </div>
+                                        <button onclick="openResource(event, '{{ material.file.url }}')" type="button"
+                                            class="relative z-[100] w-7 h-7 rounded-full border border-edustream-border flex items-center justify-center text-text-muted hover:bg-edustream-emerald hover:text-edustream-navy hover:border-edustream-emerald transition-all shadow-sm cursor-pointer button-hover transform hover:scale-110">
+                                            <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endwith %}
+                        </div>
+                        {% empty %}
+                        <div
+                            class="text-center py-12 border border-dashed border-edustream-border rounded-xl bg-edustream-navy/30">
+                            <div
+                                class="w-12 h-12 rounded-full bg-edustream-slate flex items-center justify-center mx-auto mb-3 opacity-50">
+                                <span class="material-symbols-outlined text-2xl text-text-muted">folder_off</span>
+                            </div>
+                            <p class="text-xs text-text-muted font-medium">No materials uploaded yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center h-full text-center p-8 text-text-muted opacity-60">
+                <div class="w-16 h-16 rounded-3xl bg-edustream-slate flex items-center justify-center mb-4 shadow-2xl">
+                    <span class="material-symbols-outlined text-3xl">public</span>
+                </div>
+                <p class="text-sm font-medium text-white mb-2">Academic Archive</p>
+                <p class="text-xs leading-relaxed max-w-[200px] mx-auto opacity-70">Select a specific course channel to
+                    access its academic materials.</p>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="sidebar-overlay" onclick="closeSidebars()"
+        class="fixed inset-0 bg-black/50 z-10 hidden md:hidden glass-blur"></div>
+
+</div>
+
+<!-- WebSocket Script -->
+<script>
+    const roomName = "{{ room_name }}"; const username = "{{ request.user.username }}";
+
+    // OPEN RESOURCE FUNCTION
+    function openResource(event, url) {
+        event.stopPropagation(); // Stop bubbling to card
+        console.log('Button clicked! Opening:', url);
+        if (url) {
+            // Create temporary link and click it
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            console.error('Resource URL is empty.');
+        }
+    }
+
+    // Redirect logic
+    // Removed redirect so general channel stays empty
+
+    // Auto-scroll
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+    // WebSocket
+    const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + roomName + '/');
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        appendMessage(data);
+    };
+
+    chatSocket.onclose = function (e) { console.error('Chat socket closed unexpectedly'); };
+
+    document.getElementById('chat-form').onsubmit = function (e) {
+        e.preventDefault();
+        const messageInput = document.getElementById('chat-message-input');
+        const message = messageInput.value.trim();
+        if (message) {
+            chatSocket.send(JSON.stringify({ 'message': message, 'username': username }));
+            messageInput.value = '';
+        }
+    };
+
+    function appendMessage(data) {
+        const isMe = data.username === username;
+        const messageHtml = `
+            <div class="flex flex-col gap-1 w-full animate-fade-in-up ${isMe ? 'translate-x-[3px]' : ''}">
+                <div class="flex items-baseline gap-2 ${isMe ? 'justify-end pr-[40px]' : 'justify-start pl-[40px]'}">
+                    <span class="text-[11px] font-bold ${isMe ? 'text-edustream-emerald' : 'text-white'}">
+                        ${isMe ? 'Me' : data.full_name}
+                    </span>
+                    <span class="text-[10px] text-text-muted">${new Date(data.timestamp || new Date().toISOString()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div class="flex items-center gap-3 ${isMe ? 'flex-row-reverse' : ''}">
+                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isMe ? 'bg-edustream-emerald' : 'bg-edustream-border'}">
+                        <span class="text-[10px] font-bold text-white">${(data.full_name || data.username).charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div class="px-3 py-2 rounded-xl text-sm leading-relaxed shadow-sm max-w-[75%] ${isMe ? 'bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20 rounded-tr-none' : 'bg-edustream-slate text-text-secondary border border-edustream-border rounded-tl-none'}">
+                        ${data.message}
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Mobile Toggles
+    function toggleChannels() {
+        const sidebar = document.getElementById('channels-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+    }
+
+    function toggleMaterials() {
+        const sidebar = document.getElementById('materials-sidebar');
+        sidebar.classList.toggle('hidden');
+        sidebar.classList.add('absolute', 'right-0', 'z-30', 'shadow-2xl');
+    }
+
+    function closeSidebars() {
+        document.getElementById('channels-sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebar-overlay').classList.add('hidden');
+        document.getElementById('materials-sidebar').classList.add('hidden');
+    }
+
+    // Auto-format existing static times on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.local-time').forEach(el => {
+            const timestamp = el.getAttribute('data-timestamp');
+            if (timestamp) {
+                const date = new Date(timestamp);
+                el.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+        });
+    });
+</script>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #334155;
+        border-radius: 20px;
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

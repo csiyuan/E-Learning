@@ -1,0 +1,99 @@
+{% load static %}
+
+<div class="space-y-4 pr-2 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+    {% for update in updates %}
+    <div class="flex items-start space-x-3 p-2 rounded-xl hover:bg-edustream-slate/20 transition-all duration-200">
+        <!-- User Avatar/Initial -->
+        <div class="w-10 h-10 rounded-full flex-shrink-0 bg-gradient-to-br from-edustream-slate to-edustream-navy border border-edustream-border flex items-center justify-center text-base font-bold text-text-secondary shadow-md overflow-hidden relative group">
+            {% if update.type == 'material' or update.type == 'deadline' %}
+                {% if update.uploaded_by.user.profile_pic %}
+                    <img src="{{ update.uploaded_by.user.profile_pic.url }}" class="w-full h-full object-cover" alt="{{ update.uploaded_by.user.username }}">
+                {% elif update.creator.profile_pic %}
+                    <img src="{{ update.creator.profile_pic.url }}" class="w-full h-full object-cover" alt="{{ update.creator.username }}">
+                {% else %}
+                    {% if update.type == 'deadline' %}
+                        {{ update.course.instructor.user.username|make_list|first|upper }}
+                    {% else %}
+                        {{ update.uploaded_by.user.username|make_list|first|upper }}
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                {% if update.user.profile_pic %}
+                    <img src="{{ update.user.profile_pic.url }}" class="w-full h-full object-cover" alt="{{ update.user.username }}">
+                {% else %}
+                    {{ update.user.username|make_list|first|upper }}
+                {% endif %}
+            {% endif %}
+            
+            <!-- Dynamic Glow Effect -->
+            <div class="absolute inset-0 bg-edustream-emerald/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
+
+        <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center justify-between mb-1 gap-y-2">
+                <p class="text-[10px] font-bold text-edustream-emerald uppercase tracking-widest flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-edustream-emerald animate-pulse"></span>
+                    {% if update.type == 'material' %}
+                        {% if update.uploaded_by %}
+                            {% with u=update.uploaded_by.user %}
+                            {{ u.get_full_name|default:u.username }}
+                            {% endwith %}
+                        {% else %}
+                            System
+                        {% endif %}
+                    {% elif update.type == 'deadline' %}
+                        {{ update.course.instructor.user.get_full_name|default:update.course.instructor.user.username }}
+                    {% else %}
+                        {{ update.user.get_full_name|default:update.user.username }}
+                    {% endif %}
+                </p>
+                <div class="flex items-center gap-1.5">
+                    {% if update.course %}
+                    <span class="text-[9px] font-bold text-text-muted bg-edustream-slate/50 border border-edustream-border rounded px-1.5 py-0.5 tracking-wider uppercase leading-none whitespace-nowrap">{{ update.course.course_code|default:update.course.id }}</span>
+                    {% elif update.type == 'status' %}
+                    <span class="text-[9px] font-bold text-text-muted bg-edustream-slate/50 border border-edustream-border rounded px-1.5 py-0.5 tracking-wider uppercase leading-none whitespace-nowrap">Global Feed</span>
+                    {% endif %}
+
+                    {% if update.type == 'status' %}
+                    <span class="text-[9px] font-bold text-edustream-emerald bg-edustream-emerald/10 border border-edustream-emerald/30 rounded px-1.5 py-0.5 tracking-wider uppercase leading-none whitespace-nowrap">Broadcast</span>
+                    {% elif update.type == 'deadline' %}
+                    <span class="text-[9px] font-bold text-orange-400 bg-orange-400/10 border border-orange-400/30 rounded px-1.5 py-0.5 tracking-wider uppercase leading-none whitespace-nowrap">Assignment</span>
+                    {% else %}
+                    <span class="text-[9px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/30 rounded px-1.5 py-0.5 tracking-wider uppercase leading-none whitespace-nowrap">Course Material</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if update.title %}
+            <h4 class="text-sm font-bold text-white mb-1 leading-snug truncate">{{ update.title }}</h4>
+            {% endif %}
+
+            <p class="text-xs text-text-secondary leading-relaxed opacity-90 truncate">
+                {% if update.type == 'deadline' %}
+                <span class="text-orange-400 font-bold">DEADLINE of submissions: {{ update.due_date|date:"F d, Y" }}</span>
+                {% elif update.type == 'material' %}
+                {{ update.description|default:"New resource shared with the class" }}
+                {% else %}
+                {{ update.content }}
+                {% endif %}
+            </p>
+
+            <p class="text-[10px] text-text-muted mt-2 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[10px] text-edustream-emerald/70">schedule</span>
+                {% if update.type == 'material' %}
+                {{ update.uploaded_at|timesince }} ago
+                {% else %}
+                {{ update.created_at|timesince }} ago
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    {% empty %}
+    <div class="flex flex-col items-center justify-center h-48 space-y-3">
+        <div class="w-16 h-16 rounded-full bg-edustream-slate/30 flex items-center justify-center border border-edustream-border/50">
+            <span class="material-symbols-outlined text-text-muted text-2xl">history</span>
+        </div>
+        <p class="text-text-muted text-xs text-center font-medium tracking-wide">No recent activities found.</p>
+    </div>
+    {% endfor %}
+</div>

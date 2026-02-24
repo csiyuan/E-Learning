@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Course - EDUSTREAM{% endblock %}
+
+{% block content %}
+<div class="h-full bg-edustream-navy overflow-hidden flex flex-col">
+    <div class="flex flex-1 min-h-0 w-full">
+
+        <!-- Sidebar Partial -->
+        {% include 'core/includes/sidebar.html' with active_page='create_course' %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-4 h-full flex flex-col min-h-0 relative overflow-hidden">
+
+            <!-- Background Elements -->
+            <div class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-20">
+                <div
+                    class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-edustream-emerald/20 blur-[120px] rounded-full">
+                </div>
+                <div
+                    class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-blue-500/10 blur-[100px] rounded-full">
+                </div>
+            </div>
+
+            <!-- Content Container (Centered & Constrained) -->
+            <div class="w-full max-w-4xl mx-auto h-full flex flex-col z-10 pb-8">
+
+                <!-- Header -->
+                <div class="flex-shrink-0 mb-6 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group">
+                            <span class="material-symbols-outlined text-2xl text-edustream-emerald group-hover:rotate-12 transition-transform">school</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-text-muted uppercase font-black tracking-[0.3em] mb-1">Architectural Hub</p>
+                            <h1 class="text-2xl font-black text-white tracking-tight">Create New Course</h1>
+                        </div>
+                    </div>
+                    <a href="{% url 'teacher_dashboard' %}"
+                        class="text-[10px] font-black text-text-muted hover:text-white transition-all flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2.5 rounded-xl border border-white/5 uppercase tracking-widest">
+                        <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Dashboard
+                    </a>
+                </div>
+
+                <!-- Main Card -->
+                <div class="flex-1 min-h-0 bento-card p-10 flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] bg-gradient-to-br from-edustream-slate to-edustream-navy border-white/5">
+
+                    <form method="post" class="flex-1 flex flex-col gap-8 min-h-0">
+                        {% csrf_token %}
+
+                        <!-- Form Content -->
+                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-4 -mr-4">
+                            <div class="space-y-8">
+
+                                <!-- Title Section -->
+                                <div class="group/input">
+                                    <label class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2.5 block ml-1">Course Title</label>
+                                    <input type="text" name="title" id="id_title" placeholder="Ex: Advanced Quantum Computing" required
+                                        class="w-full bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-5 py-4 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all placeholder:text-white/20">
+                                    {% if form.title.errors %}
+                                    <p class="text-red-400 text-[10px] mt-1 font-bold">{{ form.title.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Description Section -->
+                                <div class="group/input">
+                                    <label class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2.5 block ml-1">Core Objectives</label>
+                                    <textarea name="description" id="id_description" placeholder="Describe the deployment objectives and learning outcomes of this course..." rows="6" required
+                                        class="w-full bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-5 py-4 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all placeholder:text-white/20 resize-none leading-relaxed"></textarea>
+                                    {% if form.description.errors %}
+                                    <p class="text-red-400 text-[10px] mt-1 font-bold">{{ form.description.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Metadata Row -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-4">
+                                    <div class="group/input col-span-2">
+                                        <label class="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] mb-2.5 block ml-1">Personnel Capacity</label>
+                                        <div class="relative">
+                                            <input type="number" name="max_students" id="id_max_students" value="30" required
+                                                class="w-full bg-edustream-navy/30 border border-edustream-border/60 rounded-2xl px-5 py-4 text-xs text-white focus:outline-none focus:border-edustream-emerald/50 focus:bg-edustream-navy/50 transition-all tracking-widest font-black">
+                                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-[9px] font-black text-text-muted tracking-widest">LIMIT</span>
+                                        </div>
+                                        <p class="text-[9px] text-text-muted mt-2 font-bold uppercase tracking-tight ml-1 opacity-50">Authorized student enrollment cap</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="pt-4 mt-auto">
+                            <button type="submit"
+                                class="w-full bg-gradient-to-r from-edustream-emerald to-emerald-600 text-white font-black py-5 rounded-[20px] transition-all shadow-[0_10px_40px_-10px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_50px_-10px_rgba(16,185,129,0.4)] hover:-translate-y-1 active:scale-[0.98] uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-3">
+                                <span class="material-symbols-outlined text-base">rocket_launch</span>
+                                Deploy Course Hub
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

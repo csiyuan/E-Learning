@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Feedback: {{ course.title }} - SCHOLARHUB{% endblock %}
+
+{% block footer_margin %}mt-0{% endblock %}
+
+{% block content %}
+<div class="h-full bg-edustream-navy flex flex-col lg:flex-row min-h-0 overflow-hidden">
+
+    <!-- Sidebar Partial -->
+    {% include 'core/includes/sidebar.html' with active_page='feedback' %}
+
+    <!-- Main Content -->
+    <!-- Main Content -->
+    <main class="flex-1 p-3 md:p-4 lg:p-6 lg:pb-8 overflow-y-auto custom-scrollbar">
+        
+        <!-- Back Link -->
+        <a href="{% url 'feedback_list' %}"
+            class="inline-flex items-center text-text-muted hover:text-edustream-emerald mb-6 transition-colors">
+            <span class="material-symbols-outlined mr-1 text-sm">arrow_back</span>
+            <span class="text-sm">Back to Courses</span>
+        </a>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            <!-- Left Column: Feedback Form or Success Modal -->
+            <div class="lg:col-span-2">
+                {% if success %}
+                <!-- Success Modal / Card -->
+                <div class="bento-card p-6 text-center flex flex-col items-center justify-center min-h-[300px]">
+                    <div
+                        class="w-20 h-20 rounded-full bg-edustream-emerald/10 flex items-center justify-center mb-6 animate-bounce">
+                        <span class="material-symbols-outlined text-4xl text-edustream-emerald">check_circle</span>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Feedback Submitted!</h2>
+                    <p class="text-text-secondary mb-8 max-w-md mx-auto">Thank you for your feedback. Your detailed
+                        input helps us improve the quality of our courses for everyone.</p>
+
+                    <a href="{% url 'feedback_list' %}"
+                        class="bg-edustream-emerald hover:bg-emerald-400 text-edustream-navy font-bold py-3 px-8 rounded-lg flex items-center gap-2 transform hover:-translate-y-0.5 transition-all shadow-lg shadow-emerald-500/20">
+                        <span class="material-symbols-outlined text-lg">arrow_back</span>
+                        Return to Feedback List
+                    </a>
+                </div>
+                {% else %}
+                <div class="bento-card p-5 lg:p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-edustream-emerald tracking-wide uppercase mb-0.5">QUALITY
+                                ASSURANCE</p>
+                            <h1 class="text-xl font-bold text-white mb-0.5">{{ course.course_code }}: Course Feedback</h1>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-text-muted uppercase tracking-wider mb-0.5">OVERALL SATISFACTION</p>
+                            <div class="flex gap-0.5 justify-end text-edustream-emerald">
+                                <span class="material-symbols-outlined text-[10px]">star</span>
+                                <span class="material-symbols-outlined text-[10px]">star</span>
+                                <span class="material-symbols-outlined text-[10px]">star</span>
+                                <span class="material-symbols-outlined text-[10px]">star_half</span>
+                                <span class="material-symbols-outlined text-text-muted text-[10px]">star</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'course_feedback' course.id %}">
+                        {% csrf_token %}
+
+                        <!-- Rating Section -->
+                        <div class="mb-8">
+                            <label
+                                class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">RATE
+                                YOUR EXPERIENCE</label>
+                            <div class="flex gap-4">
+                                <!-- Star Rating Input (Visual representation backed by radio buttons) -->
+                                <div class="rating-stars flex flex-row-reverse justify-end gap-1">
+                                    <input type="radio" id="star5" name="rating" value="5" class="hidden peer/5" />
+                                    <label for="star5"
+                                        class="material-symbols-outlined text-2xl text-edustream-border cursor-pointer hover:text-edustream-emerald peer-checked/5:text-edustream-emerald peer-hover/5:text-edustream-emerald transition-colors">star</label>
+
+                                    <input type="radio" id="star4" name="rating" value="4" class="hidden peer/4" />
+                                    <label for="star4"
+                                        class="material-symbols-outlined text-2xl text-edustream-border cursor-pointer hover:text-edustream-emerald peer-checked/4:text-edustream-emerald peer-hover/4:text-edustream-emerald peer-checked/5:text-edustream-emerald peer-hover/5:text-edustream-emerald transition-colors">star</label>
+
+                                    <input type="radio" id="star3" name="rating" value="3" class="hidden peer/3" />
+                                    <label for="star3"
+                                        class="material-symbols-outlined text-2xl text-edustream-border cursor-pointer hover:text-edustream-emerald peer-checked/3:text-edustream-emerald peer-hover/3:text-edustream-emerald peer-checked/4:text-edustream-emerald peer-hover/4:text-edustream-emerald peer-checked/5:text-edustream-emerald peer-hover/5:text-edustream-emerald transition-colors">star</label>
+
+                                    <input type="radio" id="star2" name="rating" value="2" class="hidden peer/2" />
+                                    <label for="star2"
+                                        class="material-symbols-outlined text-2xl text-edustream-border cursor-pointer hover:text-edustream-emerald peer-checked/2:text-edustream-emerald peer-hover/2:text-edustream-emerald peer-checked/3:text-edustream-emerald peer-hover/3:text-edustream-emerald peer-checked/4:text-edustream-emerald peer-hover/4:text-edustream-emerald peer-checked/5:text-edustream-emerald peer-hover/5:text-edustream-emerald transition-colors">star</label>
+
+                                    <input type="radio" id="star1" name="rating" value="1" class="hidden peer/1"
+                                        required />
+                                    <label for="star1"
+                                        class="material-symbols-outlined text-2xl text-edustream-border cursor-pointer hover:text-edustream-emerald peer-checked/1:text-edustream-emerald peer-hover/1:text-edustream-emerald peer-checked/2:text-edustream-emerald peer-hover/2:text-edustream-emerald peer-checked/3:text-edustream-emerald peer-hover/3:text-edustream-emerald peer-checked/4:text-edustream-emerald peer-hover/4:text-edustream-emerald peer-checked/5:text-edustream-emerald peer-hover/5:text-edustream-emerald transition-colors">star</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Qualitative Comments -->
+                        <div class="mb-5">
+                            <label for="comments"
+                                class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">QUALITATIVE
+                                COMMENTS</label>
+                            <textarea id="comments" name="comments" rows="5"
+                                class="w-full bg-edustream-navy border border-edustream-border rounded-xl p-4 text-white text-sm focus:outline-none focus:border-edustream-emerald transition-colors placeholder:text-text-muted resize-none"
+                                placeholder="Describe your learning experience, what you liked, and what could be improved..."
+                                required></textarea>
+                        </div>
+
+                        <div class="border-t border-edustream-border my-6"></div>
+
+                        <!-- Submit Section -->
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs text-text-muted italic">Your feedback is anonymous and helps us improve
+                                curriculum quality.</p>
+                            <button type="submit"
+                                class="bg-edustream-emerald hover:bg-emerald-400 text-edustream-navy font-bold py-2.5 px-6 rounded-lg flex items-center gap-2 transform hover:-translate-y-0.5 transition-all shadow-lg shadow-emerald-500/20 text-xs">
+                                Submit Feedback
+                                <span class="material-symbols-outlined text-base">send</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Instructor -->
+            <div class="h-full">
+                <!-- Instructor Card -->
+                <div class="bento-card p-5 lg:p-6 h-full flex flex-col">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex gap-3">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                                {{ course.instructor.user.username|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white">{{ course.instructor.user.get_full_name|default:course.instructor.user.username }}</h3>
+                                <p class="text-[10px] font-bold text-edustream-emerald uppercase tracking-wide mb-0.5">LECTURER</p>
+                                <div class="flex items-center gap-2 text-[10px] text-text-muted">
+                                    <span class="flex items-center gap-1"><span
+                                            class="material-symbols-outlined text-[10px] text-edustream-emerald">verified</span>
+                                        Elite Lecturer</span>
+                                    <span>•</span>
+                                    <span>{{ course.instructor.courses.count }} Courses</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="mailto:{{ course.instructor.user.email }}"
+                                class="w-7 h-7 rounded-lg bg-edustream-slate border border-edustream-border flex items-center justify-center text-text-secondary hover:text-edustream-emerald hover:border-edustream-emerald transition-colors"
+                                title="Contact Instructor">
+                                <span class="material-symbols-outlined text-xs">mail</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <p class="text-[13px] text-text-secondary leading-relaxed opacity-90 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                        Instructor for {{ course.course_code }}: {{ course.title }}. Committed to providing high-quality education and mentorship
+                        in technical fields.
+                    </p>
+
+                    <div class="mt-auto pt-2 flex items-center justify-between text-[10px] text-text-muted border-t border-edustream-border/30">
+                        <span>Office: Building A, Room 302</span>
+                        <span class="italic">Course Focus: Tech Logic</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

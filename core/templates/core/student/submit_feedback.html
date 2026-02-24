@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Submit Feedback - {{ course.title }}{% endblock %}
+
+{% block content %}
+<!-- Course Feedback Page - EDUSTREAM Style (matching reference image) -->
+<div class="min-h-screen bg-edustream-navy flex items-center justify-center p-8">
+
+    <div class="max-w-2xl w-full">
+
+        <!-- Back button -->
+        <a href="{% url 'course_detail_student' course.id %}"
+            class="inline-flex items-center space-x-2 text-text-secondary hover:text-edustream-emerald transition mb-6">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            <span class="text-sm">Back to Course</span>
+        </a>
+
+        <!-- Feedback Form Card -->
+        <div class="bento-card">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div
+                    class="w-16 h-16 bg-edustream-emerald/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-edustream-emerald text-3xl">star</span>
+                </div>
+                <h1 class="text-2xl font-bold mb-2">
+                    {% if existing_feedback %}Update Your Review{% else %}Rate This Course{% endif %}
+                </h1>
+                <p class="text-sm text-text-secondary">{{ course.course_code }}: {{ course.title }}</p>
+            </div>
+
+            <!-- Form -->
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Star Rating -->
+                <div>
+                    <label
+                        class="block text-xs font-bold text-text-secondary uppercase mb-4 tracking-wider text-center">SELECT
+                        YOUR RATING</label>
+
+                    <!-- Star rating interactive buttons -->
+                    <div class="flex justify-center space-x-3 mb-2">
+                        {% for i in "12345" %}
+                        <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}"
+                            class="hidden peer/star{{ forloop.counter }}" {% if existing_feedback and
+                            existing_feedback.rating == forloop.counter %}checked{% endif %} required>
+                        <label for="star{{ forloop.counter }}"
+                            class="cursor-pointer text-text-muted hover:text-edustream-emerald peer-checked/star{{ forloop.counter }}:text-edustream-emerald transition">
+                            <span class="material-symbols-outlined text-4xl rating-star"
+                                style="font-variation-settings: 'FILL' 0;">star</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <p class="text-center text-xs text-text-muted mt-2">Click a star to rate</p>
+                </div>
+
+                <!-- Comment -->
+                <div>
+                    <label class="block text-xs font-bold text-text-secondary uppercase mb-3 tracking-wider">YOUR
+                        FEEDBACK</label>
+                    <textarea name="comment" rows="6" required
+                        class="w-full bg-edustream-navy border border-edustream-border rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-edustream-emerald transition resize-none"
+                        placeholder="Share your experience with this course. What did you learn? What could be improved? Your feedback helps other students and lecturers.">{% if existing_feedback %}{{ existing_feedback.comment }}{% endif %}</textarea>
+                    <p class="text-xs text-text-muted mt-2">Minimum 10 characters</p>
+                </div>
+
+                <!-- Anonymous option -->
+                <div
+                    class="flex items-center space-x-3 p-4 bg-edustream-navy rounded-lg border border-edustream-border">
+                    <input type="checkbox" name="is_anonymous" id="anonymous"
+                        class="w-5 h-5 bg-edustream-navy border-2 border-edustream-border rounded checked:bg-edustream-emerald checked:border-edustream-emerald focus:ring-2 focus:ring-edustream-emerald/50 cursor-pointer"
+                        {% if existing_feedback.is_anonymous %}checked{% endif %}>
+                    <label for="anonymous" class="flex-1 cursor-pointer">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-symbols-outlined text-edustream-emerald text-sm">lock</span>
+                            <span class="text-sm font-semibold">Submit Anonymously</span>
+                        </div>
+                        <p class="text-xs text-text-muted mt-1">Your name won't be shown to other students</p>
+                    </label>
+                </div>
+
+                <!-- Submit button -->
+                <div class="flex items-center space-x-3">
+                    <button type="submit"
+                        class="flex-1 bg-edustream-emerald hover:bg-emerald-600 text-white font-bold py-4 rounded-lg flex items-center justify-center space-x-2 transition">
+                        <span>{% if existing_feedback %}Update Review{% else %}Submit Feedback{% endif %}</span>
+                        <span class="material-symbols-outlined">send</span>
+                    </button>
+
+                    {% if existing_feedback %}
+                    <a href="{% url 'course_detail_student' course.id %}"
+                        class="px-6 py-4 bg-edustream-navy border border-edustream-border hover:border-edustream-emerald rounded-lg text-text-secondary hover:text-white transition font-semibold">
+                        Cancel
+                    </a>
+                    {% endif %}
+                </div>
+
+            </form>
+
+            <!-- Guidelines -->
+            <div class="mt-8 pt-6 border-t border-edustream-border">
+                <h4 class="text-xs font-bold text-text-secondary uppercase mb-3 tracking-wider">FEEDBACK GUIDELINES</h4>
+                <ul class="space-y-2 text-xs text-text-muted">
+                    <li class="flex items-start space-x-2">
+                        <span
+                            class="material-symbols-outlined text-edustream-emerald text-sm mt-0.5">check_circle</span>
+                        <span>Be honest and constructive in your review</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <span
+                            class="material-symbols-outlined text-edustream-emerald text-sm mt-0.5">check_circle</span>
+                        <span>Focus on course content, teaching methods, and materials</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <span
+                            class="material-symbols-outlined text-edustream-emerald text-sm mt-0.5">check_circle</span>
+                        <span>Avoid personal attacks or inappropriate language</span>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Star rating interaction -->
+<style>
+    /* Fill stars on hover and when checked */
+    input[type="radio"]:checked+label .rating-star {
+        font-variation-settings: 'FILL' 1 !important;
+    }
+
+    /* Fill stars on hover (for better UX) */
+    label:hover .rating-star,
+    input[type="radio"]:hover~label .rating-star {
+        font-variation-settings: 'FILL' 1 !important;
+    }
+</style>
+
+<script>
+    // Simple star rating interaction
+    // When you hover over a star, fill all stars up to and including that star
+    document.addEventListener('DOMContentLoaded', function () {
+        const stars = document.querySelectorAll('.rating-star');
+        const labels = document.querySelectorAll('[for^="star"]');
+
+        labels.forEach((label, index) => {
+            label.addEventListener('mouseenter', function () {
+                // Fill all stars up to this one
+                for (let i = 0; i <= index; i++) {
+                    stars[i].style.fontVariationSettings = "'FILL' 1";
+                }
+                // Empty stars after this one
+                for (let i = index + 1; i < stars.length; i++) {
+                    stars[i].style.fontVariationSettings = "'FILL' 0";
+                }
+            });
+        });
+
+        // Reset on mouse leave from container
+        const container = document.querySelector('.flex.justify-center.space-x-3');
+        container.addEventListener('mouseleave', function () {
+            const checked = document.querySelector('input[name="rating"]:checked');
+            if (checked) {
+                const checkedIndex = parseInt(checked.value) - 1;
+                stars.forEach((star, i) => {
+                    if (i <= checkedIndex) {
+                        star.style.fontVariationSettings = "'FILL' 1";
+                    } else {
+                        star.style.fontVariationSettings = "'FILL' 0";
+                    }
+                });
+            } else {
+                stars.forEach(star => {
+                    star.style.fontVariationSettings = "'FILL' 0";
+                });
+            }
+        });
+    });
+</script>
+
+{% endblock %}

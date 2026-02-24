@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Material - EDUSTREAM{% endblock %}
+
+{% block content %}
+<div class="h-full bg-edustream-navy overflow-hidden">
+    <div class="flex flex-col lg:flex-row w-full h-full">
+
+        <!-- Sidebar Partial -->
+        {% include 'core/includes/sidebar.html' with active_page='courses' %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-6 h-full overflow-y-auto custom-scrollbar flex flex-col">
+
+            <!-- Header -->
+            <div class="flex-shrink-0 mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <h1 class="text-sm text-text-secondary">Upload Material &mdash; {{ course.title }}</h1>
+                    </div>
+                    <a href="{% url 'course_detail' course.id %}"
+                        class="text-xs text-text-muted hover:text-edustream-emerald transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">arrow_back</span> Back to Course
+                    </a>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="max-w-3xl w-full">
+                <div class="bento-card p-6">
+                    <form method="post" enctype="multipart/form-data" class="space-y-5">
+                        {% csrf_token %}
+
+                        <!-- Title field -->
+                        <div>
+                            <label for="id_title"
+                                class="block text-[10px] text-text-muted uppercase font-bold mb-1.5 tracking-wider">Material
+                                Title <span class="text-edustream-emerald">*</span></label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <p class="text-red-400 text-[10px] mt-1">{{ form.title.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description field -->
+                        <div>
+                            <label for="id_description"
+                                class="block text-[10px] text-text-muted uppercase font-bold mb-1.5 tracking-wider">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <p class="text-red-400 text-[10px] mt-1">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-[10px] text-text-muted mt-1">Optional — add details about this material</p>
+                        </div>
+
+                        <!-- File upload -->
+                        <div>
+                            <label for="id_file"
+                                class="block text-[10px] text-text-muted uppercase font-bold mb-1.5 tracking-wider">File
+                                <span class="text-edustream-emerald">*</span></label>
+                            <div
+                                class="bg-edustream-navy border-2 border-dashed border-edustream-border rounded-xl p-6 text-center hover:border-edustream-emerald/30 transition-all">
+                                {{ form.file }}
+                                <div class="mt-3">
+                                    <span
+                                        class="material-symbols-outlined text-2xl text-text-muted mb-1">upload_file</span>
+                                    <p class="text-xs text-text-muted">Click to select a file or drag and drop</p>
+                                    <p class="text-[10px] text-text-muted mt-1">Max file size: 10MB</p>
+                                </div>
+                            </div>
+                            {% if form.file.errors %}
+                            <p class="text-red-400 text-[10px] mt-1">{{ form.file.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info box -->
+                        <div class="bg-edustream-emerald/5 border border-edustream-emerald/20 rounded-xl p-3">
+                            <div class="flex gap-2">
+                                <span
+                                    class="material-symbols-outlined text-edustream-emerald text-sm flex-shrink-0 mt-0.5">info</span>
+                                <div class="text-xs text-text-secondary">
+                                    <p class="font-bold text-white text-[10px] uppercase mb-1 tracking-wider">Supported
+                                        file types</p>
+                                    <p class="text-[10px] text-text-muted">PDFs, images (JPG, PNG), Word documents,
+                                        PowerPoint, Excel, and more.</p>
+                                    <p class="text-[10px] text-text-muted mt-1">All enrolled students will be notified
+                                        when you upload this material.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit button -->
+                        <div class="flex gap-3 pt-4 border-t border-edustream-border mt-4">
+                            <button type="submit"
+                                class="flex-1 bg-edustream-emerald text-white font-bold py-2.5 px-4 rounded-lg text-xs hover:bg-emerald-600 transition-all shadow-lg shadow-edustream-emerald/20 uppercase tracking-wider">
+                                Upload Material
+                            </button>
+                            <a href="{% url 'course_detail' course.id %}"
+                                class="flex-1 text-center border border-edustream-border text-text-muted py-2.5 rounded-lg text-xs font-bold hover:border-white hover:text-white transition-all uppercase tracking-wider">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Style for form fields -->
+<style>
+    input[type="text"],
+    textarea {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid var(--edustream-border, rgba(255, 255, 255, 0.08));
+        border-radius: 0.75rem;
+        padding: 10px 16px;
+        color: white;
+        font-size: 12px;
+    }
+
+    textarea {
+        border-radius: 0.75rem;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+        outline: none;
+        border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    input[type="file"] {
+        width: 100%;
+        color: var(--text-muted, #94a3b8);
+        font-size: 11px;
+        cursor: pointer;
+    }
+
+    ::placeholder {
+        color: rgba(148, 163, 184, 0.4);
+        font-size: 11px;
+    }
+</style>
+
+{% endblock %}

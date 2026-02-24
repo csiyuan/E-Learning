@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results - EDUSTREAM{% endblock %}
+
+{% block content %}
+<div class="h-full bg-edustream-navy overflow-hidden flex flex-col relative">
+    <!-- Network Background Animation -->
+    <div class="network-particles opacity-20"></div>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar relative z-10">
+        <div class="max-w-6xl mx-auto px-8 py-12">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between mb-12">
+                <div class="flex items-center gap-6">
+                    <div class="w-14 h-14 rounded-2xl bg-edustream-emerald/10 border border-edustream-emerald/30 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                        <span class="material-symbols-outlined text-edustream-emerald text-3xl">search</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black text-white uppercase tracking-widest mb-1">Search Results</h1>
+                        <p class="text-xs text-text-muted uppercase tracking-[0.2em] font-medium opacity-70">
+                            Found {{ results.count }} match{{ results.count|pluralize:"es" }} for "<span class="text-white">{{ query }}</span>"
+                        </p>
+                    </div>
+                </div>
+                
+                <a href="{% url 'home' %}" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black text-text-muted hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest group">
+                    <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    Back to Hub
+                </a>
+            </div>
+
+            {% if results %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for result_user in results %}
+                <div class="bento-card group/card hover:border-edustream-emerald/30 transition-all duration-500 hover:-translate-y-1">
+                    <div class="flex items-start gap-4">
+                        <!-- Avatar Column -->
+                        <div class="relative">
+                            <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/5 group-hover/card:border-edustream-emerald/40 transition-colors shadow-2xl">
+                                {% if result_user.profile_pic %}
+                                    <img src="{{ result_user.profile_pic.url }}" alt="Profile" class="w-full h-full object-cover">
+                                {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ result_user.get_full_name|default:result_user.username|urlencode }}&background=0D1117&color=10B981&size=128&bold=true"
+                                        alt="Profile" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg {% if result_user.user_type == 'teacher' %}bg-blue-500{% else %}bg-edustream-emerald{% endif %} border-2 border-edustream-navy flex items-center justify-center shadow-lg">
+                                <span class="material-symbols-outlined text-[10px] text-white">
+                                    {% if result_user.user_type == 'teacher' %}psychology{% else %}person{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Info Column -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="text-sm font-bold text-white truncate group-hover/card:text-edustream-emerald transition-colors">
+                                    {{ result_user.get_full_name|default:result_user.username }}
+                                </h3>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-[9px] font-black uppercase tracking-[0.15em] {% if result_user.user_type == 'teacher' %}text-blue-400{% else %}text-edustream-emerald{% endif %} bg-opacity-10 px-2 py-0.5 rounded-full border border-current border-opacity-20">
+                                    {% if result_user.user_type == 'teacher' %}Lecturer{% else %}Student{% endif %}
+                                </span>
+                                <span class="text-[9px] text-text-muted font-bold uppercase tracking-widest opacity-50">
+                                    @{{ result_user.username }}
+                                </span>
+                            </div>
+
+                            <p class="text-[10px] text-text-muted line-clamp-2 leading-relaxed opacity-80 mb-4 h-8 italic">
+                                {{ result_user.bio|default:"No transmission history found..." }}
+                            </p>
+
+                            <div class="pt-4 border-t border-white/5 flex items-center justify-between">
+                                <span class="text-[8px] text-text-muted uppercase tracking-widest font-black opacity-40">
+                                    Joined {{ result_user.date_joined|date:"M Y" }}
+                                </span>
+                                <a href="{% url 'profile' result_user.username %}" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-text-muted hover:bg-edustream-emerald/20 hover:text-edustream-emerald transition-all">
+                                    <span class="material-symbols-outlined text-base">visibility</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center py-32 border-2 border-dashed border-white/5 rounded-[40px] bg-white/[0.01]">
+                <div class="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 border border-white/5 shadow-inner">
+                    <span class="material-symbols-outlined text-5xl text-text-muted/30">monitoring</span>
+                </div>
+                <h2 class="text-xl font-bold text-white mb-2">No Transmissions Found</h2>
+                <p class="text-xs text-text-muted uppercase tracking-widest font-medium text-center">
+                    We couldn't locate any personnel matching "<span class="text-white">{{ query }}</span>"
+                </p>
+                <a href="{% url 'home' %}" class="mt-8 text-[10px] font-black text-edustream-emerald uppercase tracking-[0.3em] hover:brightness-125 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    Reset Scan
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

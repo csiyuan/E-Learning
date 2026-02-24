@@ -1,0 +1,91 @@
+<div class="hidden lg:block w-20 flex-shrink-0 relative z-40">
+    <aside
+        class="flex flex-col w-20 hover:w-64 transition-all duration-300 bg-edustream-slate border-r border-edustream-border py-6 sticky top-16 h-full overflow-y-auto overflow-x-hidden group shadow-xl">
+        <nav class="space-y-2 w-full flex flex-col pt-2">
+            {% if request.user.user_type == 'student' %}
+            <!-- Student Links -->
+            <a href="{% url 'student_dashboard' %}"
+                class="h-12 flex items-center {% if active_page == 'dashboard' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">dashboard</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Dashboard</span>
+            </a>
+
+            <a href="{% url 'course_browse' %}"
+                class="h-12 flex items-center {% if active_page == 'browse' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">school</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Browse
+                    Courses</span>
+            </a>
+
+            <a href="{% url 'chat_room' 'general' %}"
+                class="h-12 flex items-center {% if active_page == 'community' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">groups</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Community</span>
+            </a>
+
+            <a href="{% url 'feedback_list' %}"
+                class="h-12 flex items-center {% if active_page == 'feedback' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">rate_review</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Feedback</span>
+            </a>
+
+            {% elif request.user.user_type == 'teacher' %}
+            <!-- Teacher Links -->
+            <a href="{% url 'teacher_dashboard' %}"
+                class="h-12 flex items-center {% if active_page == 'dashboard' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">dashboard</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Faculty
+                    Hub</span>
+            </a>
+
+            <a href="{% url 'create_course' %}"
+                class="h-12 flex items-center {% if active_page == 'create_course' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">add_box</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">New
+                    Course</span>
+            </a>
+
+            <a href="{% url 'chat_room' 'general' %}"
+                class="h-12 flex items-center {% if active_page == 'community' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">groups</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Community</span>
+            </a>
+
+
+            {% endif %}
+        </nav>
+
+        <!-- Settings (at bottom) -->
+        <div class="mt-auto pb-4 w-full">
+            <a href="#"
+                class="h-12 flex items-center {% if active_page == 'settings' %}bg-edustream-emerald text-edustream-navy{% else %}text-text-secondary hover:bg-edustream-emerald/10 hover:text-edustream-emerald{% endif %} mx-3 rounded-xl transition-all relative overflow-hidden whitespace-nowrap">
+                <div class="min-w-[3.5rem] flex justify-center">
+                    <span class="material-symbols-outlined text-2xl">settings</span>
+                </div>
+                <span
+                    class="font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">Settings</span>
+            </a>
+        </div>
+    </aside>
+</div>
