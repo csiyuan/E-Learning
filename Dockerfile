@@ -13,4 +13,4 @@ COPY . .
 RUN python manage.py collectstatic --noinput
 
 # run migrations, seed demo data, and start server
-CMD sh -c "python manage.py migrate && python manage.py seed_data && daphne -b 0.0.0.0 -p \$PORT elearning_platform.asgi:application"
+CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_data && daphne -b 0.0.0.0 -p $PORT elearning_platform.asgi:application"]
