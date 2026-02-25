@@ -311,6 +311,14 @@ The API docs at `/api/docs/` are automatically generated from the serializers an
 
 A significant amount of effort was put into ensuring the app feels native on mobile devices. The main navigation features a clean, hidden-on-desktop slide-out sidebar where the platform logo and navigation links live, triggered by a universally accessible hamburger menu pinned to the top left of the screen. I also made sure that scrollable components within the modern Bento grid—like the Student Dashboard Activity Feed—have precise padding offsets so that content isn't clipped by bottom navigation bars on smartphones.
 
+### 5.16 Interactive Course Modules (Accordion UI)
+
+To manage screen real estate when a student is enrolled in multiple courses, the main courses list on the dashboard acts as an interactive accordion. Using Alpine.js client-side state, clicking a course header expands to reveal its materials and deadlines, automatically collapsing the previously open module. This keeps the interface clean even with heavy enrollment.
+
+### 5.17 Advanced Teacher Dashboard Layout
+
+Instead of a generic list of courses, the teacher dashboard was completely refactored into a custom 3-column "Command Center." It features a dedicated upload/management pane in the center, flanked by active student tracking, quick-access course links, and recent system broadcast updates on the sides, maximizing data density and usability for instructors.
+
 ## 6. Use of Taught Techniques
 
 ### 6.1 Django Fundamentals
