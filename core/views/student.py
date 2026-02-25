@@ -25,13 +25,26 @@ def student_dashboard(request):
     # get the student's profile
     student_profile = request.user.student_profile
     
-    # get student's enrolled courses
-    enrolled_courses = student_profile.get_my_courses()
+    # get student's enrolled courses (include blocked so we can show them as disabled)
+    enrollments = Enrollment.objects.filter(student=student_profile).exclude(completion_status='dropped')
+    enrolled_courses = []
+    for enrollment in enrollments:
+        course = enrollment.course
+        course.enrollment_status = enrollment.completion_status
+        course.is_blocked = (enrollment.completion_status == 'blocked')
+        course.instructor_email = course.instructor.user.email if course.instructor else ''
+        enrolled_courses.append(course)
+    
+    # Separate active (non-blocked) courses for filtering deadlines/activity
+    active_courses = [c for c in enrolled_courses if not c.is_blocked]
     
     # Calculate if each course has a deadline due (upcoming and not submitted)
     # Calculate if each course has a deadline due (any unsubmitted deadline)
     now = timezone.now()
     for course in enrolled_courses:
+        if course.is_blocked:
+            course.highlight_state = 'none'
+            continue
         course_deadlines = course.deadlines.all()
         if not course_deadlines.exists():
             course.highlight_state = 'none'
@@ -43,10 +56,10 @@ def student_dashboard(request):
             else:
                 course.highlight_state = 'emerald'
 
-    # get teachers for these courses
+    # get teachers for active courses only
     # used a loop to be safe - might be a better way but this works
     instructors = []
-    for c in enrolled_courses:
+    for c in active_courses:
         if c.instructor:
             instructors.append(c.instructor.user)
     
@@ -54,27 +67,27 @@ def student_dashboard(request):
     # last week only
     seven_days = now - timedelta(days=7)
 
-    # get recent status updates
+    # get recent status updates (only from active/non-blocked courses)
     # 1. Student's own updates
-    # 2. Updates linked to enrolled courses
-    # 3. "Global" updates from instructors of enrolled courses (where course is None)
+    # 2. Updates linked to active courses
+    # 3. "Global" updates from instructors of active courses (where course is None)
     # AND only from the last 7 days
     status_updates = StatusUpdate.objects.filter(
         (Q(user=request.user) | 
-        Q(course__in=enrolled_courses) |
+        Q(course__in=active_courses) |
         (Q(user__in=instructors) & Q(course__isnull=True))) &
         Q(created_at__gte=seven_days)
     ).distinct()
 
-    # Get recent deadlines (last 7 days)
+    # Get recent deadlines (last 7 days) - only from active courses
     recent_deadlines = Deadline.objects.filter(
-        course__in=enrolled_courses,
+        course__in=active_courses,
         created_at__gte=seven_days
     ).order_by('-created_at')[:10]
 
-    # Get recent course materials (last 7 days)
+    # Get recent course materials (last 7 days) - only from active courses
     recent_materials = CourseMaterial.objects.filter(
-        course__in=enrolled_courses,
+        course__in=active_courses,
         uploaded_at__gte=seven_days
     ).order_by('-uploaded_at')[:10]
 
@@ -107,8 +120,8 @@ def student_dashboard(request):
     unread_notifications = request.user.notifications.filter(is_read=False)
     
     # Calculate material distribution for the "Resource Spectrum" bar
-    # We'll calculate a global one AND one for each course
-    all_materials = CourseMaterial.objects.filter(course__in=enrolled_courses)
+    # Only from active (non-blocked) courses
+    all_materials = CourseMaterial.objects.filter(course__in=active_courses)
     total_materials = all_materials.count()
     
     # helper for categorization
@@ -126,7 +139,7 @@ def student_dashboard(request):
         if course:
             assignments_count = course.deadlines.filter(due_date__gte=timezone.now()).count()
         else:
-            assignments_count = Deadline.objects.filter(course__in=enrolled_courses, due_date__gte=timezone.now()).count()
+            assignments_count = Deadline.objects.filter(course__in=active_courses, due_date__gte=timezone.now()).count()
             
         count_total += assignments_count
         
@@ -176,13 +189,16 @@ def student_dashboard(request):
     # Global distribution
     global_distribution = get_distribution(all_materials)
     
-    # Per-course distribution
+    # Per-course distribution (only for active courses)
     for course in enrolled_courses:
-        course.distribution = get_distribution(course.materials.all(), course=course)
+        if course.is_blocked:
+            course.distribution = []
+        else:
+            course.distribution = get_distribution(course.materials.all(), course=course)
     
-    # Get all unsubmitted deadlines (upcoming and overdue)
+    # Get all unsubmitted deadlines - only from active courses
     upcoming_deadlines = Deadline.objects.filter(
-        course__in=enrolled_courses
+        course__in=active_courses
     ).exclude(
         submissions__student=student_profile
     ).order_by('due_date')[:10]
@@ -209,6 +225,7 @@ def course_browse(request):
     courses = Course.objects.filter(is_active=True)
     
     enrolled_ids = []
+    blocked_ids = []
     sorted_list = []
     
     if request.user.user_type == 'student':
@@ -216,12 +233,15 @@ def course_browse(request):
         # get list of ids they are in
         enrolls = Enrollment.objects.filter(student=student)
         enrolled_ids = [e.course.id for e in enrolls]
+        blocked_ids = [e.course.id for e in enrolls if e.completion_status == 'blocked']
         
         # move enrolled to top
         enrolled = []
         others = []
         for c in courses:
             if c.id in enrolled_ids:
+                c.is_blocked = c.id in blocked_ids
+                c.instructor_email = c.instructor.user.email if c.instructor else ''
                 enrolled.append(c)
             else:
                 others.append(c)
@@ -233,6 +253,7 @@ def course_browse(request):
     context = {
         'courses': sorted_list,
         'enrolled_course_ids': enrolled_ids,
+        'blocked_course_ids': blocked_ids,
     }
     
     return render(request, 'core/student/course_browse.html', context)

@@ -88,13 +88,15 @@ def notify_students_on_broadcast(sender, instance, created, **kwargs):
         except Exception as e:
             # print(f"WebSocket notification failed: {e}")
             pass
-                
-        ChatMessage.objects.create(
-            sender=instance.user,
-            room_name=str(course.id),
-            content=f"Announcement: {broadcast_title}",
-            is_read=False
-        )
+    
+    # Post to chat channel (once, outside the loop)
+    from .models import ChatMessage
+    ChatMessage.objects.create(
+        sender=instance.user,
+        room_name=str(course.id),
+        content=f"Announcement: {broadcast_title}",
+        is_read=False
+    )
 
 @receiver(post_save, sender=Deadline)
 def notify_students_on_deadline(sender, instance, created, **kwargs):
@@ -119,7 +121,7 @@ def notify_students_on_deadline(sender, instance, created, **kwargs):
         Notification.objects.create(
             recipient=student_user,
             notification_type='deadline',
-            message=f"NEW ASSIGNMENT: '{deadline_title}' for {course.title}. Due: {instance.due_date.strftime('%b %d, %H:%I')}",
+            message=f"NEW ASSIGNMENT: '{deadline_title}' for {course.title}. Due: {instance.due_date}",
             course=course
         )
         
@@ -142,6 +144,6 @@ def notify_students_on_deadline(sender, instance, created, **kwargs):
         ChatMessage.objects.create(
             sender=instructor_user,
             room_name=str(course.id),
-            content=f"🚨 NEW ASSIGNMENT POSTED: {deadline_title}. Deadline: {instance.due_date.strftime('%b %d, %H:%I')}",
+            content=f"🚨 NEW ASSIGNMENT POSTED: {deadline_title}. Deadline: {instance.due_date}",
             is_read=False
         )

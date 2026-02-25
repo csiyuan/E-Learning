@@ -2,6 +2,14 @@
     <aside
         class="flex flex-col w-20 hover:w-64 transition-all duration-300 bg-edustream-slate border-r border-edustream-border py-6 sticky top-16 h-full overflow-y-auto overflow-x-hidden group shadow-xl">
         <nav class="space-y-2 w-full flex flex-col pt-2">
+            <!-- Mobile Logo Header (Visible only when sidebar is expanded on mobile via JS, or we can just show it for the expanded state) -->
+            <div class="lg:hidden px-4 mb-6 flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div class="w-10 h-10 bg-edustream-emerald rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-white text-2xl">school</span>
+                </div>
+                <span class="text-xl font-bold text-white whitespace-nowrap">EDUSTREAM</span>
+            </div>
+
             {% if request.user.user_type == 'student' %}
             <!-- Student Links -->
             <a href="{% url 'student_dashboard' %}"

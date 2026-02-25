@@ -72,7 +72,15 @@ After seeding, these accounts are ready to use:
 | Teacher | prof_davis  | password123  |
 | Student | emma1       | password123  |
 
-### 2.6 Running Tests
+### 2.6 Live Deployment
+
+The application is also deployed on Railway and can be accessed at:
+
+**Live URL:** [https://web-production-c78d.up.railway.app](https://web-production-c78d.up.railway.app)
+
+You can log in using the demo accounts listed above (prof_davis / password123 for teacher, emma1 / password123 for student). The deployed version uses the same SQLite database seeded with demo data, so all features including the chat, notifications, course management, and API documentation are fully functional online.
+
+### 2.7 Running Tests
 
 ```bash
 python manage.py test

@@ -28,6 +28,19 @@
         <div class="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
             <p class="px-3 text-xs font-bold text-text-muted uppercase tracking-wider mb-1 mt-2">My Courses</p>
             {% for course in enrolled_courses %}
+            {% if course.is_blocked %}
+            <div onclick="showBlockedToast('{{ course.instructor_email|escapejs }}')"
+                class="group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all cursor-not-allowed text-red-400/50 hover:bg-red-950/20">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400/60">
+                    <span class="material-symbols-outlined text-sm">lock</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-bold truncate text-white/40">{{ course.title }}</h3>
+                    <p class="text-[10px] opacity-70 truncate text-red-400/50">Blocked</p>
+                </div>
+                <span class="material-symbols-outlined text-red-400/40 text-sm">block</span>
+            </div>
+            {% else %}
             <a href="{% url 'chat_room' course.id %}"
                 class="group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all {% if room_name == course.id|stringformat:'s' or room_name == course.course_code %}bg-edustream-emerald/10 text-edustream-emerald border border-edustream-emerald/20{% else %}text-text-secondary hover:bg-edustream-navy hover:text-white{% endif %}">
                 <div
@@ -42,6 +55,7 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-edustream-emerald"></span>
                 {% endif %}
             </a>
+            {% endif %}
             {% empty %}
             <div class="px-3 py-4 text-center">
                 <p class="text-xs text-text-muted">No courses yet.</p>
@@ -62,8 +76,10 @@
         <header
             class="h-16 border-b border-edustream-border flex items-center justify-between px-4 lg:px-6 bg-edustream-navy/50 backdrop-blur-sm sticky top-0 z-10">
             <div class="flex items-center gap-3">
-                <button class="md:hidden text-text-secondary hover:text-white" onclick="toggleChannels()">
-                    <span class="material-symbols-outlined">menu</span>
+
+                <!-- Mobile Channel Toggle (Replaced Hamburger) -->
+                <button class="md:hidden w-10 h-10 rounded-xl bg-edustream-navy text-text-secondary hover:text-white flex items-center justify-center border border-edustream-border mr-1" onclick="toggleChannels()">
+                    <span class="material-symbols-outlined">forum</span>
                 </button>
 
                 <div
@@ -177,6 +193,14 @@
             </div>
         </div>
         {% else %}
+        <!-- Mobile Header for Empty State -->
+        <header class="h-16 border-b border-edustream-border flex md:hidden items-center justify-start px-4 bg-edustream-navy/50 backdrop-blur-sm sticky top-0 z-10 w-full">
+            <button class="text-text-secondary hover:text-white flex items-center gap-2" onclick="toggleChannels()">
+                <span class="material-symbols-outlined">forum</span>
+                <span class="text-xs font-bold uppercase tracking-wider">Channels</span>
+            </button>
+        </header>
+        
         <div class="flex flex-1 flex-col items-center justify-center h-full text-center p-8 text-text-muted opacity-60">
             <div class="w-16 h-16 rounded-3xl bg-edustream-slate flex items-center justify-center mb-4 shadow-2xl">
                 <span class="material-symbols-outlined text-3xl">chat</span>
@@ -184,20 +208,26 @@
             <p class="text-sm font-medium text-white mb-2">No Course Selected</p>
             <p class="text-xs leading-relaxed max-w-[200px] mx-auto opacity-70">Select a specific course channel from
                 the left sidebar to start chatting.</p>
+            <button class="md:hidden mt-6 px-4 py-2 bg-edustream-emerald/10 text-edustream-emerald rounded-lg border border-edustream-emerald/20 flex items-center gap-2 font-bold text-xs hover:bg-edustream-emerald/20 transition-colors" onclick="toggleChannels()">
+                <span class="material-symbols-outlined text-[16px]">menu</span>
+                View Channels
+            </button>
         </div>
         {% endif %}
     </main>
 
-    <!-- RIGHT SIDEBAR: MATERIALS -->
     <aside
-        class="w-[400px] bg-edustream-slate border-l border-edustream-border hidden lg:flex flex-col flex-shrink-0 z-20 absolute right-0 h-full lg:relative"
+        class="w-[400px] max-w-[85vw] bg-edustream-slate border-l border-edustream-border flex flex-col flex-shrink-0 z-20 absolute right-0 h-full transition-all duration-300 transform translate-x-full lg:translate-x-0 lg:relative"
         id="materials-sidebar">
         <!-- Sidebar Header -->
-        <div class="p-4 border-b border-edustream-border">
+        <div class="p-4 border-b border-edustream-border flex justify-between items-center">
             <h2 class="font-bold text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-edustream-emerald">folder_open</span>
                 Academic Materials
             </h2>
+            <button class="lg:hidden text-text-secondary hover:text-white" onclick="closeSidebars()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -461,25 +491,51 @@
     function toggleChannels() {
         const sidebar = document.getElementById('channels-sidebar');
         const overlay = document.getElementById('sidebar-overlay');
+        
         if (sidebar.classList.contains('-translate-x-full')) {
+            // Opening
             sidebar.classList.remove('-translate-x-full');
             overlay.classList.remove('hidden');
+            overlay.classList.add('z-10');
+            document.body.style.overflow = 'hidden';
         } else {
+            // Closing
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');
+            overlay.classList.remove('z-10');
+            document.body.style.overflow = '';
         }
     }
 
     function toggleMaterials() {
         const sidebar = document.getElementById('materials-sidebar');
-        sidebar.classList.toggle('hidden');
-        sidebar.classList.add('absolute', 'right-0', 'z-30', 'shadow-2xl');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        if (sidebar.classList.contains('translate-x-full')) {
+            // Opening
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('z-10');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            // Closing
+            sidebar.classList.add('translate-x-full');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('z-10');
+            document.body.style.overflow = '';
+        }
     }
 
     function closeSidebars() {
-        document.getElementById('channels-sidebar').classList.add('-translate-x-full');
-        document.getElementById('sidebar-overlay').classList.add('hidden');
-        document.getElementById('materials-sidebar').classList.add('hidden');
+        const channelsSidebar = document.getElementById('channels-sidebar');
+        const materialsSidebar = document.getElementById('materials-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        channelsSidebar.classList.add('-translate-x-full');
+        materialsSidebar.classList.add('translate-x-full');
+        overlay.classList.add('hidden');
+        overlay.classList.remove('z-10');
+        document.body.style.overflow = '';
     }
 
     // Auto-format existing static times on page load
@@ -524,4 +580,37 @@
         }
     }
 </style>
+
+<!-- Blocked Course Toast Notification -->
+<div id="blocked-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] hidden">
+    <div class="bg-red-950/95 border border-red-500/40 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-[0_10px_40px_rgba(239,68,68,0.2)] flex items-center gap-3 max-w-lg">
+        <span class="material-symbols-outlined text-red-400 text-xl flex-shrink-0">block</span>
+        <div>
+            <p class="text-sm font-bold text-red-400">Access Restricted</p>
+            <p class="text-xs text-red-300/70 mt-0.5" id="blocked-toast-message">You have been blocked from this course.</p>
+        </div>
+        <button onclick="hideBlockedToast()" class="ml-4 text-red-400/50 hover:text-red-400 transition-colors flex-shrink-0">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    </div>
+</div>
+<script>
+    let blockedToastTimeout;
+    function showBlockedToast(email) {
+        const toast = document.getElementById('blocked-toast');
+        const message = document.getElementById('blocked-toast-message');
+        if (email) {
+            message.textContent = `You have been Blocked. Email "${email}" for more information.`;
+        } else {
+            message.textContent = 'You have been blocked from this course. Contact your instructor.';
+        }
+        toast.classList.remove('hidden');
+        clearTimeout(blockedToastTimeout);
+        blockedToastTimeout = setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    }
+    function hideBlockedToast() {
+        document.getElementById('blocked-toast').classList.add('hidden');
+        clearTimeout(blockedToastTimeout);
+    }
+</script>
 {% endblock %}

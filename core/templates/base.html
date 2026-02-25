@@ -93,18 +93,18 @@
     <nav class="bg-edustream-slate border-b border-edustream-border sticky top-0 z-50 h-16 flex-shrink-0">
         <div class="max-w-full mx-auto px-6 h-full">
             <div class="flex items-center justify-between h-full gap-6">
-                <!-- Logo and brand -->
-                <a href="{% url 'home' %}" class="flex items-center space-x-2 flex-shrink-0">
+                <!-- Mobile hamburger menu button (Left) -->
+                <button id="mobile-menu-btn" class="lg:hidden p-2 hover:bg-edustream-navy rounded-lg transition flex-shrink-0">
+                    <span class="material-symbols-outlined text-text-secondary">menu</span>
+                </button>
+
+                <!-- Desktop Logo (Hidden on mobile) -->
+                <a href="{% url 'home' %}" class="hidden lg:flex items-center space-x-2 flex-shrink-0">
                     <div class="w-10 h-10 bg-edustream-emerald rounded-lg flex items-center justify-center">
                         <span class="material-symbols-outlined text-white text-2xl">school</span>
                     </div>
                     <span class="text-xl font-bold">EDUSTREAM</span>
                 </a>
-
-                <!-- Mobile hamburger menu button -->
-                <button id="mobile-menu-btn" class="md:hidden p-2 hover:bg-edustream-navy rounded-lg transition">
-                    <span class="material-symbols-outlined text-text-secondary">menu</span>
-                </button>
 
                 <!-- Hidden md:flex navigation placeholder -->
                 <div class="hidden md:flex items-center space-x-6 flex-1">
@@ -285,10 +285,10 @@
                     <span class="material-symbols-outlined text-edustream-emerald">library_books</span>
                     <span>Course Materials</span>
                 </a>
-                <a href="{% url 'chat_room' 'faculty' %}"
+                <a href="{% url 'chat_room' 'general' %}"
                     class="flex items-center space-x-3 p-3 hover:bg-edustream-navy rounded-lg transition">
-                    <span class="material-symbols-outlined text-edustream-emerald">analytics</span>
-                    <span>Analytics</span>
+                    <span class="material-symbols-outlined text-edustream-emerald">groups</span>
+                    <span>Community</span>
                 </a>
                 {% endif %}
 

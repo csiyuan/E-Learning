@@ -9,10 +9,10 @@
 
 {% block content %}
 <!-- SCHOLARHUB - Student Dashboard inspired by reference image 4 -->
-<div class="h-screen bg-edustream-navy flex flex-col overflow-hidden">
+<div class="h-full bg-edustream-navy flex flex-col">
 
     <!-- Main container with sidebar -->
-    <div class="flex flex-col lg:flex-row w-full lg:h-screen lg:overflow-hidden flex-1">
+    <div class="flex flex-col lg:flex-row w-full h-full flex-1">
 
         <!-- Left Sidebar Navigation - COMPACT VERSION & Sticky Wrapper -->
         {% include 'core/includes/sidebar.html' with active_page='dashboard' %}
@@ -33,7 +33,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 pb-3">
 
                 <!-- Left Column: Learning Path Card -->
-                <div class="lg:col-span-2 flex flex-col min-h-0" 
+                <div class="lg:col-span-2 flex flex-col min-h-[600px] lg:min-h-0" 
                      x-data="{ 
                         activeCourseId: null, 
                         distributions: {
@@ -142,6 +142,27 @@
                             <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2 pb-4 min-h-0">
                                 {% for course in courses %}
                                 <!-- Dynamic Course Module -->
+                                {% if course.is_blocked %}
+                                <!-- BLOCKED COURSE MODULE -->
+                                <div class="relative group/blocked" onclick="showBlockedToast('{{ course.instructor_email|escapejs }}')">
+                                    <div class="cursor-not-allowed bg-red-950/20 backdrop-blur-sm rounded-xl p-4 transition-all duration-300 flex items-center justify-between border border-red-500/30 opacity-70 hover:opacity-90">
+                                        <div class="flex items-center space-x-3 flex-1">
+                                            <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-red-500/10 text-red-400">
+                                                <span class="material-symbols-outlined text-sm">lock</span>
+                                            </div>
+                                            <div>
+                                                <h5 class="font-bold text-sm flex items-center space-x-2 text-white/60">
+                                                    <span>{{ course.title }}</span>
+                                                    <span class="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">Blocked</span>
+                                                </h5>
+                                                <p class="text-[11px] text-red-400/60 mt-0.5">Access restricted — contact instructor</p>
+                                            </div>
+                                        </div>
+                                        <span class="material-symbols-outlined text-red-400/50">block</span>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <!-- NORMAL COURSE MODULE -->
                                  <details class="group" :open="activeCourseId == '{{ course.id }}'" @toggle="if($event.target.open) { activeCourseId = '{{ course.id }}' }">
                                      <summary
                                          class="cursor-pointer bg-edustream-navy/60 hover:bg-edustream-slate/40 backdrop-blur-sm rounded-xl p-4 transition-all duration-300 flex items-center justify-between border group-open:bg-edustream-slate/20 shadow-sm hover:shadow-md
@@ -254,6 +275,7 @@
                                         {% endfor %}
                                     </div>
                                 </details>
+                                {% endif %}
                                 {% empty %}
                                 <div class="text-center py-10 opacity-50">
                                     <span class="material-symbols-outlined text-4xl mb-2">auto_stories</span>
@@ -267,7 +289,7 @@
                 <!-- End of LEFT COLUMN -->
 
                 <!-- RIGHT COLUMN (Sidebar Cards) -->
-                <div class="lg:col-span-1 flex flex-col min-h-0 space-y-5 h-full">
+                <div class="lg:col-span-1 flex flex-col min-h-[600px] lg:min-h-0 space-y-5 lg:h-full">
 
                     <!-- Upcoming Deadlines Card -->
                     <div class="bento-card flex-shrink-0">
@@ -303,13 +325,13 @@
                     </div>
 
                     <!-- Activity Feed Card -->
-                    <div class="bento-card flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div class="bento-card flex flex-col flex-1 min-h-[380px] lg:min-h-0 overflow-hidden mb-[10px]">
                         <div class="flex items-center justify-between mb-3 flex-shrink-0">
                             <h3 class="text-base font-bold">Activity Feed</h3>
                         </div>
 
-                        <div class="h-[310px] overflow-hidden flex flex-col">
-                            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                        <div class="flex-1 overflow-hidden flex flex-col">
+                            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-16">
                                 {% include 'core/includes/activity_feed.html' with updates=status_updates %}
                             </div>
                         </div>
@@ -319,10 +341,47 @@
                 </div>
 
             </div>
+            
+            <!-- Padding to prevent the main column wrapper from cutting off content -->
+            <div class="h-4 lg:hidden"></div>
             {% endblock %}
         </main>
 
     </div>
 
 </div>
+
+<!-- Blocked Course Toast Notification -->
+<div id="blocked-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] hidden">
+    <div class="bg-red-950/95 border border-red-500/40 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-[0_10px_40px_rgba(239,68,68,0.2)] flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 max-w-lg">
+        <span class="material-symbols-outlined text-red-400 text-xl flex-shrink-0">block</span>
+        <div>
+            <p class="text-sm font-bold text-red-400">Access Restricted</p>
+            <p class="text-xs text-red-300/70 mt-0.5" id="blocked-toast-message">You have been blocked from this course.</p>
+        </div>
+        <button onclick="hideBlockedToast()" class="ml-4 text-red-400/50 hover:text-red-400 transition-colors flex-shrink-0">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    let blockedToastTimeout;
+    function showBlockedToast(email) {
+        const toast = document.getElementById('blocked-toast');
+        const message = document.getElementById('blocked-toast-message');
+        if (email) {
+            message.textContent = `You have been Blocked. Email "${email}" for more information.`;
+        } else {
+            message.textContent = 'You have been blocked from this course. Contact your instructor for more information.';
+        }
+        toast.classList.remove('hidden');
+        clearTimeout(blockedToastTimeout);
+        blockedToastTimeout = setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    }
+    function hideBlockedToast() {
+        document.getElementById('blocked-toast').classList.add('hidden');
+        clearTimeout(blockedToastTimeout);
+    }
+</script>
 {% endblock %}

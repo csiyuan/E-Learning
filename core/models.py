@@ -264,6 +264,8 @@ class Notification(models.Model):
         ('feedback', 'New Feedback'),
         ('submission', 'New Submission'),
         ('general', 'General'),
+        ('system', 'System'),
+        ('deadline', 'Deadline'),
     )
     
     recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='notifications')

@@ -296,18 +296,59 @@ def remove_student_from_course(request, course_id, student_id):
     # Check if we are blocking or removing
     action = request.GET.get('action', 'remove')
     
+    # Helper to send real-time WebSocket notification
+    def push_realtime_notification(recipient_user, msg, notif_type='system'):
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'notifications_{recipient_user.username}',
+                {
+                    'type': 'send_notification',
+                    'notification_type': notif_type,
+                    'message': msg
+                }
+            )
+        except:
+            pass  # continue even if websocket fails
+    
     if action == 'block':
         enrollment.completion_status = 'blocked'
         enrollment.is_active = False
         enrollment.save()
+        block_msg = f"You have been blocked from {course.title}. Please email {request.user.email} for more information."
+        Notification.objects.create(
+            recipient=student_profile.user,
+            notification_type='system',
+            message=block_msg,
+            course=course
+        )
+        push_realtime_notification(student_profile.user, block_msg)
         messages.success(request, f'Student {student_profile.user.username} has been blocked from the course.')
     elif action == 'unblock':
         enrollment.completion_status = 'ongoing'
         enrollment.is_active = True
         enrollment.save()
+        unblock_msg = f"You have been unblocked from {course.title}. You can now access all course materials again."
+        Notification.objects.create(
+            recipient=student_profile.user,
+            notification_type='system',
+            message=unblock_msg,
+            course=course
+        )
+        push_realtime_notification(student_profile.user, unblock_msg)
         messages.success(request, f'Student {student_profile.user.username} has been unblocked and re-instated.')
     else:
         # Default is remove (delete enrollment)
+        remove_msg = f"You have been removed from {course.title}. Please contact {request.user.email} if you have questions."
+        Notification.objects.create(
+            recipient=student_profile.user,
+            notification_type='system',
+            message=remove_msg,
+            course=course
+        )
+        push_realtime_notification(student_profile.user, remove_msg)
         enrollment.delete()
         messages.success(request, f'Student {student_profile.user.username} has been removed from the course.')
     

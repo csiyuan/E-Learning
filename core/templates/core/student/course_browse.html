@@ -66,10 +66,18 @@
                     <!-- Action Button -->
                     <div class="mt-auto">
                         {% if course.id in enrolled_course_ids %}
-                        <a href="{% url 'course_detail_student' course.id %}"
-                            class="block w-full py-2.5 rounded-lg bg-edustream-emerald/20 border border-edustream-emerald/50 text-edustream-emerald font-bold text-sm text-center hover:bg-edustream-emerald hover:text-white transition-all">
-                            Go to Course
-                        </a>
+                            {% if course.id in blocked_course_ids %}
+                            <div onclick="showBlockedToast('{{ course.instructor_email|escapejs }}')"
+                                class="block w-full py-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-sm text-center cursor-pointer hover:bg-red-500/20 transition-all">
+                                <span class="material-symbols-outlined text-sm align-middle mr-1">block</span>
+                                Blocked
+                            </div>
+                            {% else %}
+                            <a href="{% url 'course_detail_student' course.id %}"
+                                class="block w-full py-2.5 rounded-lg bg-edustream-emerald/20 border border-edustream-emerald/50 text-edustream-emerald font-bold text-sm text-center hover:bg-edustream-emerald hover:text-white transition-all">
+                                Go to Course
+                            </a>
+                            {% endif %}
                         {% else %}
                         <a href="{% url 'enroll_course' course.id %}"
                             class="block w-full py-2.5 rounded-lg bg-edustream-emerald text-edustream-navy font-bold text-sm text-center hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5">
@@ -92,4 +100,37 @@
 
     </main>
 </div>
+
+<!-- Blocked Course Toast Notification -->
+<div id="blocked-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] hidden">
+    <div class="bg-red-950/95 border border-red-500/40 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-[0_10px_40px_rgba(239,68,68,0.2)] flex items-center gap-3 max-w-lg">
+        <span class="material-symbols-outlined text-red-400 text-xl flex-shrink-0">block</span>
+        <div>
+            <p class="text-sm font-bold text-red-400">Access Restricted</p>
+            <p class="text-xs text-red-300/70 mt-0.5" id="blocked-toast-message">You have been blocked from this course.</p>
+        </div>
+        <button onclick="hideBlockedToast()" class="ml-4 text-red-400/50 hover:text-red-400 transition-colors flex-shrink-0">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    </div>
+</div>
+<script>
+    let blockedToastTimeout;
+    function showBlockedToast(email) {
+        const toast = document.getElementById('blocked-toast');
+        const message = document.getElementById('blocked-toast-message');
+        if (email) {
+            message.textContent = `You have been Blocked. Email "${email}" for more information.`;
+        } else {
+            message.textContent = 'You have been blocked from this course. Contact your instructor.';
+        }
+        toast.classList.remove('hidden');
+        clearTimeout(blockedToastTimeout);
+        blockedToastTimeout = setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    }
+    function hideBlockedToast() {
+        document.getElementById('blocked-toast').classList.add('hidden');
+        clearTimeout(blockedToastTimeout);
+    }
+</script>
 {% endblock %}

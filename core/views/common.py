@@ -47,13 +47,19 @@ def post_status(request):
 def chat_room(request, room_name):
     # Fetch enrolled courses for the "Channels" sidebar
     enrolled_courses = []
+    blocked_course_ids = []
     if request.user.user_type == 'student':
         if hasattr(request.user, 'student_profile'):
             enrollments = request.user.student_profile.enrollments.select_related('course').all()
-            enrolled_courses = [e.course for e in enrollments]
+            for e in enrollments:
+                e.course.is_blocked = (e.completion_status == 'blocked')
+                e.course.instructor_email = e.course.instructor.user.email if e.course.instructor else ''
+                if e.completion_status == 'blocked':
+                    blocked_course_ids.append(e.course.id)
+                enrolled_courses.append(e.course)
     elif request.user.user_type == 'teacher':
         if hasattr(request.user, 'teacher_profile'):
-            enrolled_courses = request.user.teacher_profile.courses_teaching.all()
+            enrolled_courses = list(request.user.teacher_profile.courses_teaching.all())
     
     # Check if the current room corresponds to a course (for the "Materials" sidebar)
     current_course = None
