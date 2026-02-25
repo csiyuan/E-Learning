@@ -307,6 +307,10 @@ Rather than using generic placeholder icons, the platform generates personalised
 
 The API docs at `/api/docs/` are automatically generated from the serializers and ViewSets. You can browse every endpoint, see the expected request/response formats, and even try out API calls directly from the browser. This was pretty easy to set up with drf-spectacular but it adds a lot of professional polish.
 
+### 5.15 Mobile Responsiveness Polish
+
+A significant amount of effort was put into ensuring the app feels native on mobile devices. The main navigation features a clean, hidden-on-desktop slide-out sidebar where the platform logo and navigation links live, triggered by a universally accessible hamburger menu pinned to the top left of the screen. I also made sure that scrollable components within the modern Bento grid—like the Student Dashboard Activity Feed—have precise padding offsets so that content isn't clipped by bottom navigation bars on smartphones.
+
 ## 6. Use of Taught Techniques
 
 ### 6.1 Django Fundamentals
