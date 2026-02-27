@@ -363,8 +363,8 @@ def course_detail_student(request, course_id):
         total = sum([f.rating for f in feedbacks])
         avg_rating = total / feedbacks.count()
     
-    # get upcoming deadlines
-    upcoming_deadlines = course.deadlines.filter(due_date__gte=timezone.now()).order_by('due_date')
+    # get upcoming deadlines (excluding already submitted ones)
+    upcoming_deadlines = course.deadlines.filter(due_date__gte=timezone.now()).exclude(submissions__student=student).order_by('due_date')
     
     context = {
         'course': course,

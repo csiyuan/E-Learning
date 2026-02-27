@@ -6,3 +6,5 @@ drf-spectacular==0.29.0
 Pillow==12.1.1
 django-filter==25.2
 whitenoise==6.9.0
+channels-redis==4.3.0
+redis==7.2.1

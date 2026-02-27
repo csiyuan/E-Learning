@@ -113,7 +113,7 @@
 
                         <form id="upload-form" method="post" enctype="multipart/form-data" action="{% url 'unified_dashboard_action' %}" class='flex-1 flex flex-col min-h-0 gap-5'>
                             {% csrf_token %}
-                            <input type='hidden' name='type' id='input-type' value='material'>
+                            <input type='hidden' name='upload_type' id='input-type' value='material'>
                             
                             <!-- Form Fields Container -->
                             <div id="form-fields-container" class="flex flex-col gap-6 flex-shrink-0 relative z-20">
@@ -411,45 +411,46 @@
         const btnMaterial = document.getElementById('btn-material');
         const btnBroadcast = document.getElementById('btn-broadcast');
         const btnDeadline = document.getElementById('btn-deadline');
-        const titleInput = document.getElementById('input-title');
-        const uploadIcon = document.getElementById('upload-icon');
-        const deadlineFields = document.getElementById('deadline-fields');
-        const dueDateInput = document.getElementById('input-due-date');
-        const hiddenType = document.getElementById('hidden-upload-type');
-        const deployBtn = document.getElementById('deploy-btn');
+        
+        const titleInputs = document.querySelectorAll('#input-title');
+        const uploadIcons = document.querySelectorAll('#upload-icon');
+        const deadlineFields = document.querySelectorAll('#deadline-fields');
+        const dueDateInputs = document.querySelectorAll('#input-due-date');
+        const deployBtns = document.querySelectorAll('#deploy-btn');
 
         // Reset all buttons
         [btnMaterial, btnBroadcast, btnDeadline].forEach(btn => {
-            btn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all text-text-muted hover:text-white text-center uppercase tracking-wider';
+            if (btn) btn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all text-text-muted hover:text-white text-center uppercase tracking-wider';
         });
 
         // Activate selected
         const activeBtn = document.getElementById(`btn-${type}`);
-        activeBtn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all bg-edustream-emerald text-edustream-navy shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center uppercase tracking-wider';
+        if (activeBtn) activeBtn.className = 'w-[80px] py-[7px] rounded-md text-[7px] font-bold transition-all bg-edustream-emerald text-edustream-navy shadow-[0_0_20px_rgba(16,185,129,0.3)] text-center uppercase tracking-wider';
         
-        hiddenType.value = type;
+        const mainHiddenType = document.getElementById('input-type');
+        if (mainHiddenType) mainHiddenType.value = type;
+        
+        const modalHiddenType = document.getElementById('hidden_upload_type');
+        if (modalHiddenType) modalHiddenType.value = type;
 
         if (type === 'material') {
-            titleInput.placeholder = 'Ex: Semester 2 Project Guidelines';
-            titleInput.required = true;
-            uploadIcon.textContent = 'cloud_upload';
-            deadlineFields.classList.add('hidden');
-            dueDateInput.required = false;
-            deployBtn.innerText = 'UPLOAD MATERIAL';
+            titleInputs.forEach(el => { el.placeholder = 'Ex: Semester 2 Project Guidelines'; el.required = true; });
+            uploadIcons.forEach(el => { el.textContent = 'cloud_upload'; });
+            deadlineFields.forEach(el => { el.classList.add('hidden'); });
+            dueDateInputs.forEach(el => { el.required = false; });
+            deployBtns.forEach(el => { el.innerText = 'UPLOAD MATERIAL'; });
         } else if (type === 'broadcast') {
-            titleInput.placeholder = 'Subject (Optional)';
-            titleInput.required = false;
-            uploadIcon.textContent = 'campaign';
-            deadlineFields.classList.add('hidden');
-            dueDateInput.required = false;
-            deployBtn.innerText = 'SEND BROADCAST';
+            titleInputs.forEach(el => { el.placeholder = 'Subject (Optional)'; el.required = false; });
+            uploadIcons.forEach(el => { el.textContent = 'campaign'; });
+            deadlineFields.forEach(el => { el.classList.add('hidden'); });
+            dueDateInputs.forEach(el => { el.required = false; });
+            deployBtns.forEach(el => { el.innerText = 'SEND BROADCAST'; });
         } else if (type === 'deadline') {
-            titleInput.placeholder = 'Ex: Final Architecture Project';
-            titleInput.required = true;
-            uploadIcon.textContent = 'timer';
-            deadlineFields.classList.remove('hidden');
-            dueDateInput.required = true;
-            deployBtn.innerText = 'SET DEADLINE';
+            titleInputs.forEach(el => { el.placeholder = 'Ex: Final Architecture Project'; el.required = true; });
+            uploadIcons.forEach(el => { el.textContent = 'timer'; });
+            deadlineFields.forEach(el => { el.classList.remove('hidden'); });
+            dueDateInputs.forEach(el => { el.required = true; });
+            deployBtns.forEach(el => { el.innerText = 'SET DEADLINE'; });
         }
     }
 

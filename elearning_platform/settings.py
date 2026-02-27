@@ -168,12 +168,14 @@ SPECTACULAR_SETTINGS = {
 # ASGI_APPLICATION tells Django to use our ASGI config for websockets
 ASGI_APPLICATION = 'elearning_platform.asgi.application'
 
-# Channel layers - using in-memory for now (no Redis needed)
-# this won't work with multiple servers but good for development
+# Channel layers - using Redis
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
 }
 
 

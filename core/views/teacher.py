@@ -441,6 +441,10 @@ def unified_dashboard_action(request):
             messages.error(request, "Assignments must be assigned to a specific cohort.")
             return redirect('teacher_dashboard')
             
+        if not files:
+            messages.error(request, "You must attach a file (e.g., assignment instructions) for deadlines.")
+            return redirect('teacher_dashboard')
+            
         course = get_object_or_404(Course, id=course_id)
         
         # Create the deadline entry
